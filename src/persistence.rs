@@ -19,16 +19,22 @@ async fn get_jobs<'a>() -> Result<Collection<JobModel>, &'static str> {
     }
 }
 
-pub async fn get_job(job_id: String) -> Result<JobDto, &'static str> {
+pub async fn get_job_dto(job_id: String) -> Result<JobDto, &'static str> {
+    let job_model = get_job_model(job_id).await?;
+    return Ok(JobDto {
+        id: job_model.id.unwrap().to_string(),
+        status: job_model.status,
+        results: vec![]
+    })
+}
+
+pub async fn get_job_model(job_id: String) -> Result<JobModel, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs.find_one(Some(doc!("_id": id)), None).await {
-                if let Some(job_dto) = result {
-                    return Ok(JobDto {
-                        id: job_id,
-                        status: job_dto.status,
-                    })
+                if let Some(job_model) = result {
+                    return Ok(job_model)
                 }
             }
         }
@@ -36,14 +42,15 @@ pub async fn get_job(job_id: String) -> Result<JobDto, &'static str> {
     Err("Could not find Job")
 }
 
-pub async fn save_job<'a>(create_job: CreateJobDto<'a>) -> Result<JobDto, &'static str> {
+pub async fn save_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static str> {
     let job = JobModel {
         id: None,
-        status: JobStatus::WaitingForFile,
-        source_uri: create_job.source_uri.to_string(),
-        callback_uri :  create_job.callback_uri.to_string(),
-        source_mime_type:  create_job.source_mime_type.to_string(),
-        destination_mime_type:  create_job.destination_mime_type.to_string(),
+        status: JobStatus::InProgress,
+        callback_uri :  create_job.callback_uri,
+        documents: create_job.documents,
+        source_files: create_job.source_files,
+        results: vec![],
+        
     };
     if let Ok(jobs) = get_jobs().await
     {
@@ -53,7 +60,8 @@ pub async fn save_job<'a>(create_job: CreateJobDto<'a>) -> Result<JobDto, &'stat
             .as_object_id().expect("msg");
             return Ok(JobDto {
                 id: id.to_string(),
-                status: JobStatus::WaitingForFile,
+                status: JobStatus::InProgress,
+                results: vec![],
             })
         }
     }
