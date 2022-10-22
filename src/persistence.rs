@@ -19,8 +19,8 @@ async fn get_jobs<'a>() -> Result<Collection<JobModel>, &'static str> {
     }
 }
 
-pub async fn get_job_dto(job_id: String) -> Result<JobDto, &'static str> {
-    let job_model = get_job_model(job_id).await?;
+pub async fn get_job_dto(job_id: &String) -> Result<JobDto, &'static str> {
+    let job_model = get_job_model(&job_id).await?;
     return Ok(JobDto {
         id: job_model.id.unwrap().to_string(),
         status: job_model.status,
@@ -28,7 +28,7 @@ pub async fn get_job_dto(job_id: String) -> Result<JobDto, &'static str> {
     })
 }
 
-pub async fn get_job_model(job_id: String) -> Result<JobModel, &'static str> {
+pub async fn get_job_model(job_id: &String) -> Result<JobModel, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
@@ -66,4 +66,18 @@ pub async fn save_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static s
         }
     }
     Err("Could not create Job")
+}
+
+pub async fn set_error(job_id: &String) -> Result<(), &'static str> {
+    if let Ok(jobs) = get_jobs().await
+    {
+        if let Ok(id) = ObjectId::from_str(&job_id) {
+            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"Status": JobStatus::Error as u32}}, None).await {
+                if result.modified_count > 0 {
+                    return Ok(())
+                }
+            }
+        }
+    }
+    Err("Could not find Job")
 }

@@ -19,7 +19,7 @@ fn root<'a>() -> Json<RootDto<'a>> {
 
 #[get("/<job_id>")]
 async fn job<'a>(job_id: String) -> Result<Json<JobDto>, NotFound<&'static str>> {
-    match get_job_dto(job_id).await {
+    match get_job_dto(&job_id).await {
         Ok(job_dto) => Ok(Json(job_dto)),
         Err(e) => Err(NotFound(e)),
     }
