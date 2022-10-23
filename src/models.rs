@@ -56,8 +56,8 @@ pub struct SourceFile {
 #[serde(rename_all = "camelCase")]
 pub struct Part {
     pub source_file_id: String,
-    pub start_page_number: Option<usize>,
-    pub end_page_number: Option<usize>,
+    pub start_page_number: Option<u16>,
+    pub end_page_number: Option<u16>,
     pub rotation: Rotation,
 }
 

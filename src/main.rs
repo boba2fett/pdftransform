@@ -1,9 +1,21 @@
 #[macro_use] extern crate rocket;
-use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{save_job, get_job_dto}, convert::process_job};
+use std::sync::Arc;
+
+use pdfium_render::prelude::Pdfium;
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{save_job, get_job_dto}, convert::process_job, transform::{PDFIUM_PTR, get_pdfium}};
 use rocket::{serde::json::Json, response::status::{Conflict, NotFound}};
 
 #[launch]
 async fn rocket() -> _ {
+    let pdfium = Pdfium::new(
+        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
+            .or_else(|_| Pdfium::bind_to_system_library()).unwrap());
+    let mut pdfium_arc = Arc::new(pdfium);
+    unsafe{
+        let pdfium_arc = &mut pdfium_arc as *mut Arc<Pdfium>;
+        PDFIUM_PTR.store(pdfium_arc, std::sync::atomic::Ordering::Relaxed);
+    }
+    
     rocket::build()
         .mount("/", routes![root])
         .mount("/convert", routes![job, create_job])
@@ -30,8 +42,11 @@ async fn create_job(create_job: Json<CreateJobDto>) -> Result<Json<JobDto>, Conf
     match save_job(create_job.0).await {
         Ok(job_dto) => {
             let job_id = job_dto.id.clone();
-            tokio::spawn(async move {
-                process_job(job_id).await
+            let pdfium = Arc::clone(get_pdfium());
+            tokio::spawn(async {
+                async {
+                    process_job(job_id, pdfium).await
+                }
             });
             Ok(Json(job_dto))
         },
