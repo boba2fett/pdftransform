@@ -54,9 +54,10 @@ pub struct SourceFile {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Page {
+pub struct Part {
     pub source_file_id: String,
-    pub page_index: usize,
+    pub start_page_number: Option<usize>,
+    pub end_page_number: Option<usize>,
     pub rotation: Rotation,
 }
 
@@ -76,7 +77,7 @@ pub enum Rotation {
 #[serde(rename_all = "camelCase")]
 pub struct Document {
     pub id: String,
-    pub binaries: Vec<Page>,
+    pub binaries: Vec<Part>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

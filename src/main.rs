@@ -1,5 +1,5 @@
 #[macro_use] extern crate rocket;
-use pdf::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{save_job, get_job_dto}, convert::process_job};
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{save_job, get_job_dto}, convert::process_job};
 use rocket::{serde::json::Json, response::status::{Conflict, NotFound}};
 
 #[launch]
