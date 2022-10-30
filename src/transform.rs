@@ -1,16 +1,11 @@
-use std::{sync::{Arc, Mutex, atomic::AtomicPtr}, ptr};
-
 use pdfium_render::prelude::*;
 use crate::models::Part;
 
-pub static mut PDFIUM_PTR: AtomicPtr<Arc<Pdfium>> = AtomicPtr::new(ptr::null_mut());
-
-pub fn get_pdfium() -> &'static Arc<Pdfium>
+pub fn get_pdfium() -> Pdfium
 {
-    unsafe {
-        let a: &mut *mut Arc<Pdfium> = PDFIUM_PTR.get_mut();
-        &**a
-    }
+    Pdfium::new(
+        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
+            .or_else(|_| Pdfium::bind_to_system_library()).unwrap())
 }
 
 pub fn add_page(new_document: &mut PdfDocument, source_document: PdfDocument, part: &Part) {

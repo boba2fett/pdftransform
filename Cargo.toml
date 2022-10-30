@@ -16,6 +16,7 @@ serde_repr = "0.1"
 serde_type_name = "0.2.0"
 reqwest = "0.11"
 bytes = "1.2"
-futures = {version = "0.3.24"}
+#futures = {version = "0.3.25"}
+#rayon = "1.5.3"
 tempfile = "3.3.0"
 pdfium-render = {version = "0.7.23", features = ["thread_safe"]}
