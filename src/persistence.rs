@@ -1,8 +1,8 @@
-use std::{env, error::Error, str::FromStr, path::PathBuf};
+use std::{env, error::Error, str::FromStr};
 use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client, Collection};
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus}};
+use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult}};
 
 async fn get_client() -> Result<Client, Box<dyn Error>> {
     let client_uri = env::var("MONGO_URI")?;
@@ -52,10 +52,10 @@ pub async fn create_new_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'st
         results: vec![],
         
     };
-    save_job(job).await
+    save_new_job(job).await
 }
 
-pub async fn save_job<'a>(job: JobModel) -> Result<JobDto, &'static str> {
+pub async fn save_new_job(job: JobModel) -> Result<JobDto, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(insert_result) = jobs.insert_one(job, None).await {
@@ -70,6 +70,20 @@ pub async fn save_job<'a>(job: JobModel) -> Result<JobDto, &'static str> {
         }
     }
     Err("Could not save Job")
+}
+
+pub async fn set_ready(job_id: &String, results: Vec<DocumentResult>) -> Result<(), &'static str> {
+    if let Ok(jobs) = get_jobs().await
+    {
+        if let Ok(id) = ObjectId::from_str(&job_id) {
+            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"Status": JobStatus::Finished as u32 ,"Results": bson::to_bson(&results).ok()}}, None).await {
+                if result.modified_count > 0 {
+                    return Ok(())
+                }
+            }
+        }
+    }
+    Err("Could not find Job")
 }
 
 pub async fn set_error(job_id: &String) -> Result<(), &'static str> {

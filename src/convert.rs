@@ -1,9 +1,9 @@
-use std::{path::PathBuf, thread::JoinHandle};
+use std::path::PathBuf;
 use futures::StreamExt;
-use tokio::{io::copy, task::JoinError};
+use tokio::io::copy;
 use tempfile::Builder;
 
-use crate::{persistence::{get_job_model, set_error, save_job}, models::{SourceFile, JobModel, DocumentResult}, transform::{add_page, get_pdfium}};
+use crate::{persistence::{get_job_model, set_ready}, models::DocumentResult, transform::{add_page, get_pdfium}};
 
 pub async fn process_job(job_id: String) -> () {
     let job_model = get_job_model(&job_id).await.unwrap();
@@ -36,41 +36,35 @@ pub async fn process_job(job_id: String) -> () {
     //     let path = tmp_dir.path().join(&source_file.source_file_id);
     //     source_files.push(dowload_source_file(ref_client, &source_file.source_uri, path).await);
     // }
-    let mut results = Vec::with_capacity(job_model.documents.len());
-    let pdfium = get_pdfium();
+    
 
-    for document in job_model.documents {
-        let mut new_doc = pdfium.create_new_pdf().unwrap();
-        for part in document.binaries {
-            let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).unwrap();
-            let source_doc = pdfium.load_pdf_from_file(source_path, None).unwrap();
-            // if source_doc.pages().len() <= part.start_page_number.unwrap_or_else(|| u16::MIN) || source_doc.pages().len() <= part.end_page_number.unwrap_or_else(|| u16::MAX) {
-            //     // _ = set_error(&job_id).await;
-            //     //return ()
-            //     panic!("asd");
-            // }
-            add_page(&mut new_doc, source_doc, &part);
+    let results = {
+        let mut results = Vec::with_capacity(job_model.documents.len());
+        let pdfium = get_pdfium();
+        for document in job_model.documents {
+            let mut new_doc = pdfium.create_new_pdf().unwrap();
+            for part in document.binaries {
+                let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).unwrap();
+                let source_doc = pdfium.load_pdf_from_file(source_path, None).unwrap();
+                // if source_doc.pages().len() <= part.start_page_number.unwrap_or_else(|| u16::MIN) || source_doc.pages().len() <= part.end_page_number.unwrap_or_else(|| u16::MAX) {
+                //     // _ = set_error(&job_id).await;
+                //     //return ()
+                //     panic!("asd");
+                // }
+                add_page(&mut new_doc, source_doc, &part);
+            }
+            let path = tmp_dir.path().join(&document.id);
+            new_doc.save_to_file(&path).unwrap();
+
+            results.push(DocumentResult {
+                download_url: format!("/convert/{}/{}", &job_id, document.id),
+                id: document.id.to_string(),
+            });
         }
-        let path = tmp_dir.path().join(&document.id);
-        dbg!(&path);
-        new_doc.save_to_file(&path).unwrap();
+        results
+    };
 
-        results.push(DocumentResult {
-            download_url: format!("/convert/{}/{}", &job_id, document.id),
-            id: document.id.to_string(),
-        });
-    }
-
-    dbg!(&results);
-
-    // save_job(
-    //     JobModel {
-    //         results,
-    //         source_files: vec![],
-    //         documents: vec![],
-    //         ..job_model
-    //     }
-    // ).await.unwrap();
+    set_ready(&job_id, results).await.unwrap();
     ()
 }
 
