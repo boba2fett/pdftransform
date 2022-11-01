@@ -1,4 +1,4 @@
-use std::{env, error::Error, str::FromStr};
+use std::{env, error::Error, str::FromStr, path::PathBuf};
 use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client, Collection};
 
@@ -42,7 +42,7 @@ pub async fn get_job_model(job_id: &String) -> Result<JobModel, &'static str> {
     Err("Could not find Job")
 }
 
-pub async fn save_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static str> {
+pub async fn create_new_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static str> {
     let job = JobModel {
         id: None,
         status: JobStatus::InProgress,
@@ -52,6 +52,10 @@ pub async fn save_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static s
         results: vec![],
         
     };
+    save_job(job).await
+}
+
+pub async fn save_job<'a>(job: JobModel) -> Result<JobDto, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(insert_result) = jobs.insert_one(job, None).await {
@@ -65,7 +69,7 @@ pub async fn save_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'static s
             })
         }
     }
-    Err("Could not create Job")
+    Err("Could not save Job")
 }
 
 pub async fn set_error(job_id: &String) -> Result<(), &'static str> {

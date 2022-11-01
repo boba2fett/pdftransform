@@ -90,7 +90,3 @@ pub struct DocumentResult {
     pub id: String,
     pub download_url: String,
 }
-
-pub struct PdfIum {
-    pub pdfium: AtomicPtr<Arc<Pdfium>>
-}

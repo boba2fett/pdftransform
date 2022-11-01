@@ -1,20 +1,14 @@
 #[macro_use] extern crate rocket;
-use std::{sync::{Arc, atomic::{AtomicPtr, Ordering}}};
 
-use pdfium_render::prelude::{Pdfium, PdfiumLibraryBindings};
-use pdftransform::{models::{RootDto, JobDto, CreateJobDto, PdfIum}, consts::{VERSION, NAME}, persistence::{save_job, get_job_dto}, convert::process_job};
-use rocket::{serde::json::Json, response::status::{Conflict, NotFound}, State};
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files};
+use rocket::{serde::json::Json, response::status::{Conflict, NotFound}};
+use tokio::fs::File;
 
 #[launch]
 async fn rocket() -> _ {
-    // let pdfium = Pdfium::new(
-    //     Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
-    //         .or_else(|_| Pdfium::bind_to_system_library()).unwrap());
-
     rocket::build()
-        // .manage(unsafe {PdfIum { pdfium: AtomicPtr::new(&mut Arc::new(pdfium))}})
         .mount("/", routes![root])
-        .mount("/convert", routes![job, create_job])
+        .mount("/convert", routes![job, create_job, file])
 }
 
 #[get("/")]
@@ -33,13 +27,19 @@ async fn job<'a>(job_id: String) -> Result<Json<JobDto>, NotFound<&'static str>>
     }
 }
 
+#[get("/<job_id>/<file_id>")]
+async fn file(job_id: String, file_id: String) -> Option<File> {
+    File::open(get_job_files(&job_id).get_path(&file_id)).await.ok()
+}
+
 #[post("/", format = "json", data="<create_job>")]
 async fn create_job(create_job: Json<CreateJobDto>) -> Result<Json<JobDto>, Conflict<&'static str>> {
-    match save_job(create_job.0).await {
+    match create_new_job(create_job.0).await {
         Ok(job_dto) => {
             let job_id = job_dto.id.clone();
             tokio::spawn(async move {
-                process_job(job_id)
+                dbg!("asd");
+                process_job(job_id).await
             });
             Ok(Json(job_dto))
         },
