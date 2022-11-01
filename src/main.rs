@@ -1,14 +1,23 @@
 #[macro_use] extern crate rocket;
 
 use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files};
-use rocket::{serde::json::Json, response::status::{Conflict, NotFound}};
-use tokio::fs::File;
+use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self}, fs::NamedFile, Request, Response};
 
 #[launch]
 async fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![root])
         .mount("/convert", routes![job, create_job, file])
+}
+
+struct PdfFile(NamedFile);
+
+impl<'r> rocket::response::Responder<'r, 'r> for PdfFile {
+    fn respond_to(self, req: &Request) -> response::Result<'r> {
+        Response::build_from(self.0.respond_to(req)?)
+            .raw_header("Content-Type", "application/pdf")
+            .ok()
+    }
 }
 
 #[get("/")]
@@ -28,8 +37,9 @@ async fn job<'a>(job_id: String) -> Result<Json<JobDto>, NotFound<&'static str>>
 }
 
 #[get("/<job_id>/<file_id>")]
-async fn file(job_id: String, file_id: String) -> Option<File> {
-    File::open(get_job_files(&job_id).get_path(&file_id)).await.ok()
+async fn file(job_id: String, file_id: String) -> Result<PdfFile, NotFound<String>> {
+    let path = get_job_files(&job_id).await.get_path(&file_id);
+    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string())).map(|nf| PdfFile(nf))
 }
 
 #[post("/", format = "json", data="<create_job>")]
@@ -38,7 +48,6 @@ async fn create_job(create_job: Json<CreateJobDto>) -> Result<Json<JobDto>, Conf
         Ok(job_dto) => {
             let job_id = job_dto.id.clone();
             tokio::spawn(async move {
-                dbg!("asd");
                 process_job(job_id).await
             });
             Ok(Json(job_dto))
