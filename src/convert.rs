@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use futures::StreamExt;
-use tokio::io::{copy, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, JobModel, Document}, transform::{add_page, get_pdfium}, files::{JobFileProvider, get_job_files}};
+use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, get_pdfium}, files::{JobFileProvider, get_job_files}};
 
 pub async fn process_job(job_id: String) -> () {
     let job_model = get_job_model(&job_id).await.unwrap();
@@ -62,12 +62,3 @@ async fn dowload_source_file(client: &reqwest::Client, source_file_url: &str, pa
     }
     path
 }
-
-// {
-//     "callbackUri": "a",
-//     "documents": [{"id": "d1", "binaries": [
-//      {"sourceFileId": "s1", "rotation": 0}
-//   ]}],
-//     "sourceFiles": [{"sourceFileId": "s1",
-//                      "sourceUri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"}]
-//   }

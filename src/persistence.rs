@@ -24,7 +24,7 @@ pub async fn get_job_dto(job_id: &String) -> Result<JobDto, &'static str> {
     return Ok(JobDto {
         id: job_model.id.unwrap().to_string(),
         status: job_model.status,
-        results: vec![]
+        results: job_model.results,
     })
 }
 
@@ -76,7 +76,7 @@ pub async fn set_ready(job_id: &String, results: Vec<DocumentResult>) -> Result<
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
-            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"Status": JobStatus::Finished as u32 ,"Results": bson::to_bson(&results).ok()}}, None).await {
+            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"results": bson::to_bson(&results).ok()}}, None).await {
                 if result.modified_count > 0 {
                     return Ok(())
                 }
@@ -90,7 +90,7 @@ pub async fn set_error(job_id: &String) -> Result<(), &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
-            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"Status": JobStatus::Error as u32}}, None).await {
+            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32}}, None).await {
                 if result.modified_count > 0 {
                     return Ok(())
                 }

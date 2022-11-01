@@ -20,7 +20,19 @@ pub fn add_page(new_document: &mut PdfDocument, source_document: PdfDocument, pa
                     new_document.pages().len()
                 ).unwrap()
         },
-        (Some(_), None) => todo!(),
-        (Some(_), Some(_)) => todo!(),
+        (Some(start_page_number), None) => {
+            new_document.pages()
+                .copy_page_range_from_document(&source_document,
+                    start_page_number - 1..=source_document.pages().len() - 1,
+                    new_document.pages().len()
+                ).unwrap()
+        },
+        (Some(start_page_number), Some(end_page_number)) => {
+            new_document.pages()
+                .copy_page_range_from_document(&source_document,
+                    start_page_number - 1..=end_page_number - 1,
+                    new_document.pages().len()
+                ).unwrap()
+        },
     }
 }

@@ -58,7 +58,7 @@ pub struct Part {
     pub source_file_id: String,
     pub start_page_number: Option<u16>,
     pub end_page_number: Option<u16>,
-    pub rotation: Rotation,
+    pub rotation: Option<Rotation>,
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]

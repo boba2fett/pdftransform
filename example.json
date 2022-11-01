@@ -1,0 +1,25 @@
+{
+    "callbackUri": "a",
+    "documents": [
+    {   "id": "d1",
+        "binaries": [
+            { 
+                "sourceFileId": "s1",
+                "startPageNumber": 1,
+                "endPageNumber": 2
+            },
+            { 
+                "sourceFileId": "s1",
+                "startPageNumber": 3,
+                "endPageNumber": 4
+            }
+        ]   
+    }
+    ],
+    "sourceFiles": [
+    {
+        "sourceFileId": "s1",
+        "sourceUri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+    }
+  ]
+}

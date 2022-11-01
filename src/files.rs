@@ -5,7 +5,7 @@ use tokio::fs;
 pub async fn get_job_files(job_id: &str) -> JobFileProvider {
     let file_name = FileName::new(job_id);
     let dir = env::temp_dir().join(file_name.as_str().unwrap());
-    fs::create_dir_all(&dir).await;
+    fs::create_dir_all(&dir).await.unwrap();
     JobFileProvider {job_directory: dir}
 }
 
