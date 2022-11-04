@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use futures::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, create_new_pdf, load_pdf_from_file}, files::{JobFileProvider, get_job_files}};
+use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, init_pdfium}, files::{JobFileProvider, get_job_files}};
 
 pub async fn process_job(job_id: String) -> () {
     let job_model = get_job_model(&job_id).await;
@@ -21,7 +21,7 @@ pub async fn process_job(job_id: String) -> () {
         }).buffer_unordered(10).collect::<Vec<PathBuf>>().await;
 
         let results: Result<_, &str> = process(&job_id, job_model.documents, source_files, job_files);
-        match results {
+        _ = match results {
             Ok(results) => set_ready(&job_id, results).await,
             Err(err) => set_error(&job_id, err).await,
         };
@@ -32,10 +32,11 @@ fn process(job_id: &String, documents: Vec<Document>, source_files: Vec<PathBuf>
     {
         let mut results = Vec::with_capacity(documents.len());
         for document in documents {
-            let mut new_doc = create_new_pdf()?;
+            let pdfium = init_pdfium();
+            let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document")?;
             for part in document.binaries {
                 let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
-                let mut source_doc = load_pdf_from_file(source_path)?;
+                let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document")?;
                 add_page(&mut new_doc, &mut source_doc, &part).map_err(|_| "Error while converting, were the page numbers correct?")?;
             }
             let path = job_files.get_path(&document.id);

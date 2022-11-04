@@ -1,29 +1,11 @@
-use std::path::PathBuf;
-
 use pdfium_render::prelude::*;
 use crate::models::{Part, Rotation};
-
-pub static mut PDFIUM: Option<Pdfium> = None;
 
 pub fn init_pdfium() -> Pdfium
 {
     Pdfium::new(
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
             .or_else(|_| Pdfium::bind_to_system_library()).unwrap())
-}
-
-pub fn create_new_pdf() -> Result<PdfDocument<'static>, &'static str> {
-    let pdfium = unsafe {
-        PDFIUM.unwrap()
-    };
-    pdfium.create_new_pdf().map_err(|_| "Could not create document")
-}
-
-pub fn load_pdf_from_file(path: &PathBuf) -> Result<PdfDocument<'static>, &'static str> {
-    let pdfium = unsafe {
-        PDFIUM.unwrap()
-    };
-    pdfium.load_pdf_from_file(path, None).map_err(|_| "Could not create document")
 }
 
 pub fn add_page(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
