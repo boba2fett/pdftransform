@@ -24,7 +24,7 @@ pub async fn process_job(job_id: String) -> () {
     let results: Result<_, &str> = process(&job_id, job_model.documents, source_files, job_files);
     match results {
         Ok(results) => set_ready(&job_id, results).await.unwrap(),
-        Err(_) => set_error(&job_id).await.unwrap(),
+        Err(err) => set_error(&job_id, err).await.unwrap(),
     }
 }
 
@@ -37,10 +37,7 @@ fn process(job_id: &String, documents: Vec<Document>, source_files: Vec<PathBuf>
             for part in document.binaries {
                 let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).unwrap();
                 let mut source_doc = pdfium.load_pdf_from_file(source_path, None).unwrap();
-                // if source_doc.pages().len() <= part.start_page_number.unwrap_or_else(|| u16::MIN) || source_doc.pages().len() <= part.end_page_number.unwrap_or_else(|| u16::MAX) {
-                //     return Err("pages do not line up.")
-                // }
-                add_page(&mut new_doc, &mut source_doc, &part);
+                add_page(&mut new_doc, &mut source_doc, &part).map_err(|_| "Error while converting, were the page numbers correct?")?;
             }
             let path = job_files.get_path(&document.id);
             new_doc.save_to_file(&path).unwrap();

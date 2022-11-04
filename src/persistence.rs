@@ -50,7 +50,7 @@ pub async fn create_new_job<'a>(create_job: CreateJobDto) -> Result<JobDto, &'st
         documents: create_job.documents,
         source_files: create_job.source_files,
         results: vec![],
-        
+        message: None
     };
     save_new_job(job).await
 }
@@ -86,11 +86,11 @@ pub async fn set_ready(job_id: &String, results: Vec<DocumentResult>) -> Result<
     Err("Could not find Job")
 }
 
-pub async fn set_error(job_id: &String) -> Result<(), &'static str> {
+pub async fn set_error(job_id: &String, err: &'static str) -> Result<(), &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
-            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32}}, None).await {
+            if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32, "message": err}}, None).await {
                 if result.modified_count > 0 {
                     return Ok(())
                 }

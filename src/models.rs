@@ -27,6 +27,7 @@ pub struct JobModel {
     pub source_files: Vec<SourceFile>,
     pub documents: Vec<Document>,
     pub results: Vec<DocumentResult>,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
