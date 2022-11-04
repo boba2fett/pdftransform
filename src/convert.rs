@@ -19,8 +19,6 @@ pub async fn process_job(job_id: String) -> () {
         }
     }).buffer_unordered(10).collect::<Vec<PathBuf>>().await;
 
-    dbg!(&source_files);
-
     let results: Result<_, &str> = process(&job_id, job_model.documents, source_files, job_files);
     match results {
         Ok(results) => set_ready(&job_id, results).await.unwrap(),

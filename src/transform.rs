@@ -8,23 +8,23 @@ pub fn get_pdfium() -> Pdfium
             .or_else(|_| Pdfium::bind_to_system_library()).unwrap())
 }
 
-pub fn add_page(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), PdfiumError> {
+pub fn add_page(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
     let start_page_number = part.start_page_number.unwrap_or(1);
     let end_page_number = part.end_page_number.unwrap_or(source_document.pages().len());
-    turn_single_page(start_page_number, end_page_number, source_document, part);
+    turn_single_page(start_page_number, end_page_number, source_document, part)?;
     new_document.pages()
     .copy_page_range_from_document(&source_document,
         start_page_number - 1..=end_page_number - 1,
         new_document.pages().len()
-    )?;
+    ).map_err(|_| "Could not transfer pages.")?;
     Ok(())
 }
 
-fn turn_single_page(start_page_number: u16, end_page_number: u16, source_document: &mut PdfDocument, part: &Part) {
+fn turn_single_page(start_page_number: u16, end_page_number: u16, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
     if start_page_number == end_page_number && part.rotation.is_some() {
         let pages = source_document.pages();
-        let mut page = pages.iter().nth((start_page_number - 1).into()).unwrap();
-        let rotation = page.rotation().unwrap();
+        let mut page = pages.iter().nth((start_page_number - 1).into()).ok_or("Source document doesn't contain enoug pages.")?;
+        let rotation = page.rotation().map_err(|_| "Could not get rotation.")?;
         let part_rotation: i32 = part.rotation.as_ref().unwrap_or(&Rotation::P0).as_degrees();
         let turn_rotation: i32 = {
             if part_rotation < 0 {
@@ -47,4 +47,5 @@ fn turn_single_page(start_page_number: u16, end_page_number: u16, source_documen
         };
         page.set_rotation(new_rotation);
     }
+    Ok(())
 }
