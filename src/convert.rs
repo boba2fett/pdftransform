@@ -36,11 +36,11 @@ fn process(job_id: &String, documents: Vec<Document>, source_files: Vec<PathBuf>
             let mut new_doc = pdfium.create_new_pdf().unwrap();
             for part in document.binaries {
                 let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).unwrap();
-                let source_doc = pdfium.load_pdf_from_file(source_path, None).unwrap();
+                let mut source_doc = pdfium.load_pdf_from_file(source_path, None).unwrap();
                 // if source_doc.pages().len() <= part.start_page_number.unwrap_or_else(|| u16::MIN) || source_doc.pages().len() <= part.end_page_number.unwrap_or_else(|| u16::MAX) {
                 //     return Err("pages do not line up.")
                 // }
-                add_page(&mut new_doc, source_doc, &part);
+                add_page(&mut new_doc, &mut source_doc, &part);
             }
             let path = job_files.get_path(&document.id);
             new_doc.save_to_file(&path).unwrap();

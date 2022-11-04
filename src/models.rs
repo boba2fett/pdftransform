@@ -73,6 +73,13 @@ pub enum Rotation {
     P270 = 270,
 }
 
+impl Rotation {
+    pub fn as_degrees(&self) -> i32
+    {
+        *self as i32
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Document {
