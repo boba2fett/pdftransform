@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use futures::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, init_pdfium}, files::{JobFileProvider, get_job_files}};
+use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, init_pdfium, create_new_pdf, load_pdf_from_file}, files::{JobFileProvider, get_job_files}};
 
 pub async fn process_job(job_id: String) -> () {
     let job_model = get_job_model(&job_id).await;
@@ -40,11 +40,10 @@ fn process(job_id: &String, documents: Vec<Document>, source_files: Vec<&PathBuf
     {
         let mut results = Vec::with_capacity(documents.len());
         for document in documents {
-            let pdfium = init_pdfium();
-            let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
+            let mut new_doc = create_new_pdf()?;
             for part in document.binaries {
                 let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
-                let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
+                let mut source_doc = load_pdf_from_file(source_path)?;
                 add_page(&mut new_doc, &mut source_doc, &part).map_err(|_| "Error while converting, were the page numbers correct?")?;
             }
             let path = job_files.get_path(&document.id);

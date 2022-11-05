@@ -1,11 +1,29 @@
+use std::{sync::atomic::{AtomicPtr, Ordering}, ptr, path::PathBuf};
+
 use pdfium_render::prelude::*;
 use crate::models::{Part, Rotation};
 
-pub fn init_pdfium() -> Pdfium
-{
+pub const PDFIUM: AtomicPtr<Pdfium> = AtomicPtr::new(ptr::null_mut());
+
+pub fn init_pdfium() -> Pdfium {
     Pdfium::new(
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
             .or_else(|_| Pdfium::bind_to_system_library()).unwrap())
+}
+
+pub fn get_pdfium() -> &'static Pdfium {
+    let pdfium = PDFIUM.load(Ordering::Relaxed);
+    unsafe {
+        &*pdfium
+    }
+}
+
+pub fn create_new_pdf() -> Result<PdfDocument<'static>, &'static str> {
+    get_pdfium().create_new_pdf().map_err(|_| "Could not create document.")
+}
+
+pub fn load_pdf_from_file(source_path: &PathBuf) -> Result<PdfDocument<'static>, &'static str> {
+    get_pdfium().load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")
 }
 
 pub fn add_page(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {

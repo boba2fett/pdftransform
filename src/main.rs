@@ -1,11 +1,14 @@
 #[macro_use] extern crate rocket;
 
-use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files, transform::init_pdfium};
+use std::sync::atomic::Ordering;
+
+use pdfium_render::prelude::Pdfium;
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files, transform::{init_pdfium, PDFIUM}};
 use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self}, fs::NamedFile, Request, Response};
 
 #[launch]
 async fn rocket() -> _ {
-    init_pdfium();
+    PDFIUM.store(&mut init_pdfium() as *mut Pdfium, Ordering::Relaxed);
     rocket::build()
         .mount("/", routes![root])
         .mount("/convert", routes![job, create_job, file])
