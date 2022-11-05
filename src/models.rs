@@ -15,6 +15,15 @@ pub struct JobDto {
     pub id: String,
     pub status: JobStatus,
     pub results: Vec<DocumentResult>,
+    #[serde(rename = "_links")]
+    pub _links: Links,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Links {
+    #[serde(rename = "self")]
+    pub _self: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,6 +37,7 @@ pub struct JobModel {
     pub documents: Vec<Document>,
     pub results: Vec<DocumentResult>,
     pub message: Option<String>,
+    pub token: String,
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
