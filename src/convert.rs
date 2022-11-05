@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use futures::StreamExt;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, init_pdfium, create_new_pdf, load_pdf_from_file}, files::{JobFileProvider, get_job_files}};
+use crate::{persistence::{get_job_model, set_ready, set_error}, models::{DocumentResult, Document}, transform::{add_page, create_new_pdf, load_pdf_from_file}, files::{JobFileProvider, get_job_files}};
 
 pub async fn process_job(job_id: String) -> () {
     let job_model = get_job_model(&job_id).await;
