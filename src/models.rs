@@ -32,7 +32,7 @@ pub struct JobModel {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub status: JobStatus,
-    pub callback_uri: String,
+    pub callback_uri: Option<String>,
     pub source_files: Vec<SourceFile>,
     pub documents: Vec<Document>,
     pub results: Vec<DocumentResult>,
@@ -51,7 +51,7 @@ pub enum JobStatus {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateJobDto {
-    pub callback_uri: String,
+    pub callback_uri: Option<String>,
     pub documents: Vec<Document>,
     pub source_files: Vec<SourceFile>,
 }

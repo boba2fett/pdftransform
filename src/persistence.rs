@@ -31,6 +31,17 @@ pub async fn get_job_dto(job_id: &String, token: String) -> Result<JobDto, &'sta
     })
 }
 
+pub async fn _get_job_dto(job_id: &str) -> Result<JobDto, &'static str> {
+    let job_model = _get_job_model(&job_id).await?;
+    let job_id = job_model.id.unwrap().to_string();
+    return Ok(JobDto {
+        status: job_model.status,
+        results: job_model.results,
+        _links: Links { _self: get_self_url(&job_id, &job_model.token) },
+        id: job_id,
+    })
+}
+
 pub async fn get_job_model(job_id: &str, token: &str) -> Result<JobModel, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
@@ -45,7 +56,7 @@ pub async fn get_job_model(job_id: &str, token: &str) -> Result<JobModel, &'stat
     Err("Could not find job")
 }
 
-pub async fn _get_job_model(job_id: &String) -> Result<JobModel, &'static str> {
+pub async fn _get_job_model(job_id: &str) -> Result<JobModel, &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
@@ -105,7 +116,7 @@ pub async fn save_new_job(job: JobModel) -> Result<JobDto, &'static str> {
     Err("Could not save job")
 }
 
-pub async fn set_ready(job_id: &String, results: Vec<DocumentResult>) -> Result<(), &'static str> {
+pub async fn set_ready(job_id: &str, results: Vec<DocumentResult>) -> Result<(), &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
@@ -119,7 +130,7 @@ pub async fn set_ready(job_id: &String, results: Vec<DocumentResult>) -> Result<
     Err("Could not find job")
 }
 
-pub async fn set_error(job_id: &String, err: &'static str) -> Result<(), &'static str> {
+pub async fn set_error(job_id: &str, err: &'static str) -> Result<(), &'static str> {
     if let Ok(jobs) = get_jobs().await
     {
         if let Ok(id) = ObjectId::from_str(&job_id) {
