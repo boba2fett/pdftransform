@@ -14,6 +14,7 @@ pub struct RootDto<'a> {
 pub struct JobDto {
     pub id: String,
     pub status: JobStatus,
+    pub message: Option<String>,
     pub results: Vec<DocumentResult>,
     #[serde(rename = "_links")]
     pub _links: Links,
@@ -72,7 +73,7 @@ pub struct Part {
     pub rotation: Option<Rotation>,
 }
 
-#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Copy, Clone, Debug, Serialize_repr, Deserialize_repr)]
 #[repr(i32)]
 pub enum Rotation {
     N270 = -270,

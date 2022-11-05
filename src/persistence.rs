@@ -24,6 +24,7 @@ pub async fn get_job_dto(job_id: &String, token: String) -> Result<JobDto, &'sta
     let job_model = get_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
     return Ok(JobDto {
+        message: job_model.message,
         status: job_model.status,
         results: job_model.results,
         _links: Links { _self: get_self_url(&job_id, &job_model.token) },
@@ -35,6 +36,7 @@ pub async fn _get_job_dto(job_id: &str) -> Result<JobDto, &'static str> {
     let job_model = _get_job_model(&job_id).await?;
     let job_id = job_model.id.unwrap().to_string();
     return Ok(JobDto {
+        message: job_model.message,
         status: job_model.status,
         results: job_model.results,
         _links: Links { _self: get_self_url(&job_id, &job_model.token) },
@@ -106,6 +108,7 @@ pub async fn save_new_job(job: JobModel) -> Result<JobDto, &'static str> {
             .as_object_id().expect("msg");
             let job_id = id.to_string();
             return Ok(JobDto {
+                message: None,
                 status: JobStatus::InProgress,
                 results: vec![],
                 _links: Links { _self: get_self_url(&job_id, &job_token) },

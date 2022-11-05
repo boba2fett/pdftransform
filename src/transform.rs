@@ -2,9 +2,7 @@ use pdfium_render::prelude::*;
 use crate::models::{Part, Rotation};
 
 pub fn init_pdfium() -> Pdfium {
-    Pdfium::new(
-        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
-            .or_else(|_| Pdfium::bind_to_system_library()).unwrap())
+    Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
 
 pub fn add_page(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
@@ -24,7 +22,7 @@ fn turn_single_page(start_page_number: u16, end_page_number: u16, source_documen
         let pages = source_document.pages();
         let mut page = pages.iter().nth((start_page_number - 1).into()).ok_or("Source document doesn't contain enoug pages.")?;
         let rotation = page.rotation().map_err(|_| "Could not get rotation.")?;
-        let part_rotation: i32 = part.rotation.as_ref().unwrap_or(&Rotation::P0).as_degrees();
+        let part_rotation: i32 = part.rotation.unwrap_or(Rotation::P0).as_degrees();
         let turn_rotation: i32 = {
             if part_rotation < 0 {
                 360 + part_rotation

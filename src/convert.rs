@@ -72,7 +72,7 @@ fn process(job_id: &String, job_token: &str, documents: &Vec<Document>, source_f
             for part in &document.binaries {
                 let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
                 let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
-                add_page(&mut new_doc, &mut source_doc, &part).map_err(|_| "Error while converting, were the page numbers correct?")?;
+                add_page(&mut new_doc, &mut source_doc, part).map_err(|_| "Error while converting, were the page numbers correct?")?;
             }
             let path = job_files.get_path(&document.id);
             new_doc.save_to_file(&path).map_err(|_| "Could not save file.")?;
