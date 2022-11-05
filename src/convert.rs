@@ -24,7 +24,7 @@ pub async fn process_job(job_id: String) -> () {
 
         if failed.is_none() {
             let source_files = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-            let results: Result<_, &str> = process(&job_id, &job_model.documents, source_files, job_files);
+            let results: Result<_, &str> = process(&job_id, &job_model.token, &job_model.documents, source_files, job_files);
             _ = match results {
                 Ok(results) => ready(&job_id, &job_model.callback_uri, ref_client, results).await,
                 Err(err) => error(&job_id, &job_model.callback_uri, ref_client, err).await,
@@ -63,7 +63,7 @@ async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Cl
     }
 }
 
-fn process(job_id: &String, documents: &Vec<Document>, source_files: Vec<&PathBuf>, job_files: JobFileProvider) -> Result<Vec<DocumentResult>, &'static str> {
+fn process(job_id: &String, job_token: &str, documents: &Vec<Document>, source_files: Vec<&PathBuf>, job_files: JobFileProvider) -> Result<Vec<DocumentResult>, &'static str> {
     {
         let mut results = Vec::with_capacity(documents.len());
         for document in documents {
@@ -78,7 +78,7 @@ fn process(job_id: &String, documents: &Vec<Document>, source_files: Vec<&PathBu
             new_doc.save_to_file(&path).map_err(|_| "Could not save file.")?;
 
             results.push(DocumentResult {
-                download_url: format!("/convert/{}/{}", job_id, document.id),
+                download_url: format!("/convert/{}/{}?token={}", job_id, document.id, job_token),
                 id: document.id.to_string(),
             });
         }
