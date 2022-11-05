@@ -38,19 +38,23 @@ pub async fn process_job(job_id: String) -> () {
 
 async fn ready(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
     let result = set_ready(job_id, results).await;
+    if let Err(err) = result {
+        _ = error(job_id, callback_uri, client, err).await;
+        return;
+    }
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(&job_id).await;
         if let Ok(dto) = dto {
             _ = client.post(callback_uri).json::<JobDto>(&dto).send().await
         }
     }
-    else if let Err(err) = result {
-        _ = error(job_id, callback_uri, client, err).await
-    }
 }
 
 async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &'static str) {
-    _ = set_error(job_id, err).await;
+    let result = set_error(job_id, err).await;
+    if let Err(_) = result {
+        return;
+    }
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(&job_id).await;
         if let Ok(dto) = dto {
