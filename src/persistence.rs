@@ -82,7 +82,7 @@ pub fn generate_token() -> String {
 }
 
 pub fn get_self_url(job_id: &String, job_token: &String) -> String {
-    format!("/convert/{}?{}", &job_id, job_token)
+    format!("/convert/{}?token={}", &job_id, job_token)
 }
 
 pub async fn save_new_job(job: JobModel) -> Result<JobDto, &'static str> {
