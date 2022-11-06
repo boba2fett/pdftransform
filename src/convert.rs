@@ -22,17 +22,19 @@ pub async fn process_job(job_id: String) -> () {
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
 
-        if failed.is_none() {
-            let source_files = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-            let results: Result<_, &str> = process(&job_id, &job_model.token, &job_model.documents, source_files, job_files);
-            _ = match results {
-                Ok(results) => ready(&job_id, &job_model.callback_uri, ref_client, results).await,
-                Err(err) => error(&job_id, &job_model.callback_uri, ref_client, err).await,
-            };
+        match failed {
+            None => {
+                let source_files = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
+                let results: Result<_, &str> = process(&job_id, &job_model.token, &job_model.documents, source_files, job_files);
+                _ = match results {
+                    Ok(results) => ready(&job_id, &job_model.callback_uri, ref_client, results).await,
+                    Err(err) => error(&job_id, &job_model.callback_uri, ref_client, err).await,
+                };
+            }
+        Some(err) => {
+            _ = error(&job_id, &job_model.callback_uri, ref_client, err.as_ref().err().unwrap()).await;
         }
-        else {
-            _ = error(&job_id, &job_model.callback_uri, ref_client, failed.as_ref().unwrap().as_ref().err().unwrap()).await;
-        }
+    }
     }
 }
 
@@ -87,7 +89,7 @@ fn process(job_id: &String, job_token: &str, documents: &Vec<Document>, source_f
 }
 
 async fn dowload_source_file(client: &reqwest::Client, source_file_url: &str, path: PathBuf) -> Result<PathBuf, &'static str> {
-    let mut response = client.get(source_file_url).send().await.map_err(|_| "Could not download document.")?;
+    let mut response = client.get(source_file_url).send().await.map_err(|_| "rustfmt wnload document.")?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;
     while let Some(mut item) = response.chunk().await.map_err(|_| "Could read response.")? {
         file.write_all_buf(&mut item).await.map_err(|_| "Could write to file.")?;
