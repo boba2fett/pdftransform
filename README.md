@@ -13,3 +13,4 @@
 - validate jobs for doubled source id's or destination id's
 - validate rotation only for single pages
 - retry failed operations like file download or callback
+- pin dependencies
