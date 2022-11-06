@@ -1,4 +1,4 @@
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use futures::StreamExt;
 use log::info;
 use tokio::io::AsyncWriteExt;
@@ -101,10 +101,10 @@ fn process(job_id: &String, job_token: &str, documents: &Vec<Document>, source_f
 }
 
 async fn dowload_source_file(client: &reqwest::Client, source_file_url: &str, path: PathBuf) -> Result<PathBuf, &'static str> {
-    let mut response = client.get(source_file_url).send().await.map_err(|_| "rustfmt wnload document.")?;
+    let mut response = client.get(source_file_url).send().await.map_err(|_| "Could not load document.")?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;
-    while let Some(mut item) = response.chunk().await.map_err(|_| "Could read response.")? {
-        file.write_all_buf(&mut item).await.map_err(|_| "Could write to file.")?;
+    while let Some(mut item) = response.chunk().await.map_err(|_| "Could not read response.")? {
+        file.write_all_buf(&mut item).await.map_err(|_| "Could not write to file.")?;
     }
     Ok(path)
 }
