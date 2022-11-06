@@ -1,10 +1,12 @@
 use std::{path::PathBuf};
 use futures::StreamExt;
+use log::info;
 use tokio::io::AsyncWriteExt;
 
 use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_page, init_pdfium}, files::{JobFileProvider, _get_job_files}};
 
 pub async fn process_job(job_id: String) -> () {
+    info!("Starting job '{}'", &job_id);
     let job_model = _get_job_model(&job_id).await;
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
@@ -19,6 +21,8 @@ pub async fn process_job(job_id: String) -> () {
                 dowload_source_file(ref_client, &source_file.source_uri, path).await
             }
         }).buffer_unordered(10).collect::<Vec<Result<PathBuf, &'static str>>>().await;
+
+        info!("Downloaded all files for job '{}'", &job_id);
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
 
@@ -39,6 +43,7 @@ pub async fn process_job(job_id: String) -> () {
 }
 
 async fn ready(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
+    info!("Finished job '{}'", &job_id);
     let result = set_ready(job_id, results).await;
     if let Err(err) = result {
         _ = error(job_id, callback_uri, client, err).await;
@@ -47,12 +52,16 @@ async fn ready(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Cl
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(&job_id).await;
         if let Ok(dto) = dto {
-            _ = client.post(callback_uri).json::<JobDto>(&dto).send().await
+            let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
+            if let Err(err) = result {
+                info!("Error sending callback '{}' to '{}', because of {}", &job_id, callback_uri, err);
+            }
         }
     }
 }
 
 async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &'static str) {
+    info!("Finished job '{}' with error {}", &job_id, err);
     let result = set_error(job_id, err).await;
     if let Err(_) = result {
         return;
@@ -60,7 +69,10 @@ async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Cl
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(&job_id).await;
         if let Ok(dto) = dto {
-            _ = client.post(callback_uri).json::<JobDto>(&dto).send().await
+            let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
+            if let Err(err) = result {
+                info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err);
+            }
         }
     }
 }

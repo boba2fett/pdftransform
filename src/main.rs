@@ -4,6 +4,7 @@ use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self}, 
 
 #[launch]
 async fn rocket() -> _ {
+    json_env_logger::init();
     rocket::build()
         .mount("/", routes![root])
         .mount("/convert", routes![job, create_job, file])
