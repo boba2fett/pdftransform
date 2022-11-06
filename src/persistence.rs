@@ -3,7 +3,7 @@ use bson::{doc, oid::ObjectId};
 use mongodb::{options::ClientOptions, Client, Collection};
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, Links}};
+use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks}};
 
 async fn get_client() -> Result<Client, Box<dyn Error>> {
     let client_uri = env::var("MONGO_URI")?;
@@ -27,7 +27,7 @@ pub async fn get_job_dto(job_id: &String, token: String) -> Result<JobDto, &'sta
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
-        _links: Links { _self: get_self_url(&job_id, &job_model.token) },
+        _links: ConvertLinks { _self: get_self_url(&job_id, &job_model.token) },
         id: job_id,
     })
 }
@@ -39,7 +39,7 @@ pub async fn _get_job_dto(job_id: &str) -> Result<JobDto, &'static str> {
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
-        _links: Links { _self: get_self_url(&job_id, &job_model.token) },
+        _links: ConvertLinks { _self: get_self_url(&job_id, &job_model.token) },
         id: job_id,
     })
 }
@@ -111,7 +111,7 @@ pub async fn save_new_job(job: JobModel) -> Result<JobDto, &'static str> {
                 message: None,
                 status: JobStatus::InProgress,
                 results: vec![],
-                _links: Links { _self: get_self_url(&job_id, &job_token) },
+                _links: ConvertLinks { _self: get_self_url(&job_id, &job_token) },
                 id: job_id,
             })
         }

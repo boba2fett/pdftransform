@@ -1,5 +1,5 @@
 #[macro_use] extern crate rocket;
-use pdftransform::{models::{RootDto, JobDto, CreateJobDto}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files};
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto, RootLinks}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto}, convert::process_job, files::get_job_files};
 use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self}, fs::NamedFile, Request, Response};
 
 #[launch]
@@ -25,6 +25,9 @@ fn root<'a>() -> Json<RootDto<'a>> {
     Json(RootDto {
         version: VERSION,
         name: NAME,
+        _links: RootLinks {
+            convert: "/convert"
+        }
     })
 }
 

@@ -7,6 +7,14 @@ use serde_repr::{Serialize_repr, Deserialize_repr};
 pub struct RootDto<'a> {
     pub version: &'a str,
     pub name: &'a str,
+    #[serde(rename = "_links")]
+    pub _links: RootLinks<'a>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RootLinks<'a> {
+    pub convert: &'a str,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,12 +25,12 @@ pub struct JobDto {
     pub message: Option<String>,
     pub results: Vec<DocumentResult>,
     #[serde(rename = "_links")]
-    pub _links: Links,
+    pub _links: ConvertLinks,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Links {
+pub struct ConvertLinks {
     #[serde(rename = "self")]
     pub _self: String,
 }
