@@ -1672,9 +1672,9 @@ dependencies = [
 
 [[package]]
 name = "pdfium-render"
-version = "0.7.23"
+version = "0.7.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b48f7845ce9dbcd1209bbb0bfcde844118e0c6bbcc61a87e2adb4e7d3299b05a"
+checksum = "ffd7f99f054a81e035152a103a82d673fd096b065aa8859b6603735f52d20b49"
 dependencies = [
  "bindgen",
  "bitflags",
@@ -1700,7 +1700,6 @@ name = "pdftransform"
 version = "0.1.0"
 dependencies = [
  "bson",
- "bytes",
  "chrono",
  "futures",
  "json_env_logger",
@@ -1712,8 +1711,6 @@ dependencies = [
  "rocket",
  "serde",
  "serde_repr",
- "serde_type_name",
- "tempfile",
  "tokio",
 ]
 
@@ -2315,15 +2312,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "serde_type_name"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92acc4cd6ae20767c54d6cf1a075624e7f4d9e99d7ebc685398ff243144d8714"
-dependencies = [
- "serde",
 ]
 
 [[package]]

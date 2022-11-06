@@ -3,8 +3,6 @@ name = "pdftransform"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 rocket = {version = "0.5.0-rc.2", features = ["json"]}
 mongodb = "2.3"
@@ -13,12 +11,9 @@ tokio = "1"
 chrono = "0.4"
 serde = "1"
 serde_repr = "0.1"
-serde_type_name = "0.2.0"
 reqwest = {version = "0.11.12", features = ["gzip", "deflate", "stream", "json"]}
-bytes = "1.2"
 futures = {version = "0.3.25"}
 rand = "0.8.5"
-tempfile = "3.3.0"
-pdfium-render = "0.7.23"
+pdfium-render = "0.7.24"
 log = { version = "0.4.17", features = ["kv_unstable_std"] }
 json_env_logger = { version = "0.1", features = ["iso-timestamps"] }
