@@ -19,6 +19,7 @@ pub async fn _get_job_files(job_id: &str) -> JobFileProvider {
     JobFileProvider {job_directory: dir}
 }
 
+#[derive(Debug)]
 pub struct JobFileProvider {
     job_directory: PathBuf,
 }

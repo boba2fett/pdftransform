@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf};
 use futures::StreamExt;
 use tokio::io::AsyncWriteExt;
 
@@ -7,9 +7,9 @@ use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, m
 pub async fn process_job(job_id: String) -> () {
     let job_model = _get_job_model(&job_id).await;
     if let Ok(job_model) = job_model {
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let ref_client = &client;
-        
+
         let job_files = _get_job_files(&job_id).await;
 
         let source_files: Vec<Result<PathBuf, &'static str>> = futures::stream::iter(job_model.source_files)
