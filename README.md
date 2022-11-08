@@ -2,7 +2,7 @@
 
 - Using Pdfium to translate source documents into output documents
 - post content from example.json to /convert
-- to run in dev, get pdfium, start mongodb, provide MONGO_URI
+- to run in dev, get pdfium, start mongodb, provide ROCKET_DATABASES='{db={url="mongodb://localhost:27017"}}'
 
 ## TODOs
 

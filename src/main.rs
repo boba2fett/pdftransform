@@ -1,5 +1,5 @@
 #[macro_use] extern crate rocket;
-use pdftransform::{models::{RootDto, JobDto, CreateJobDto, RootLinks}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto, DbClient}, convert::process_job, files::get_job_files};
+use pdftransform::{models::{RootDto, JobDto, CreateJobDto, RootLinks}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto, DbClient}, convert::process_job, files::get_job_result_files};
 use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self}, fs::NamedFile, Request, Response};
 use rocket_db_pools::{Database};
 
@@ -43,7 +43,7 @@ async fn job<'a>(job_id: String, token: String, client: &DbClient) -> Result<Jso
 
 #[get("/<job_id>/<file_id>?<token>")]
 async fn file(db_client: &DbClient,job_id: String, file_id: String, token: String) -> Result<PdfFile, NotFound<String>> {
-    let path = get_job_files(db_client, &job_id, &token).await.map_err(|e| NotFound(e.to_string()))?;
+    let path = get_job_result_files(db_client, &job_id, &token).await.map_err(|e| NotFound(e.to_string()))?;
     let path = path.get_path(&file_id);
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string())).map(|nf| PdfFile(nf))
 }

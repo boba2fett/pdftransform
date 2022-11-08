@@ -12,7 +12,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let ref_client = &client;
 
-        let job_files = _get_job_files(&job_id).await;
+        let job_files = _get_job_files(db_client, &job_id).await;
 
         let source_files: Vec<Result<PathBuf, &'static str>> = futures::stream::iter(job_model.source_files)
         .map(|source_file| {
