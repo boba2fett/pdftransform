@@ -3,7 +3,7 @@ use futures::StreamExt;
 use log::info;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_page, init_pdfium}, files::{JobFileProvider, _get_job_files}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_page, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
     info!("Starting job '{}'", &job_id);
@@ -12,7 +12,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let ref_client = &client;
 
-        let job_files = _get_job_files(db_client, &job_id).await;
+        let job_files = TempJobFileProvider::build(&job_id).await;
 
         let source_files: Vec<Result<PathBuf, &'static str>> = futures::stream::iter(job_model.source_files)
         .map(|source_file| {
@@ -29,7 +29,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
         match failed {
             None => {
                 let source_files = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-                let results: Result<_, &str> = process(&job_id, &job_model.token, &job_model.documents, source_files, job_files);
+                let results: Result<_, &str> = process(db_client, &job_id, &job_model.token, &job_model.documents, source_files).await;
                 _ = match results {
                     Ok(results) => ready(db_client, &job_id, &job_model.callback_uri, ref_client, results).await,
                     Err(err) => error(db_client, &job_id, &job_model.callback_uri, ref_client, err).await,
@@ -77,22 +77,24 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
     }
 }
 
-fn process(job_id: &String, job_token: &str, documents: &Vec<Document>, source_files: Vec<&PathBuf>, job_files: JobFileProvider) -> Result<Vec<DocumentResult>, &'static str> {
+async fn process(db_client: &mongodb::Client, job_id: &String, job_token: &str, documents: &Vec<Document>, source_files: Vec<&PathBuf>) -> Result<Vec<DocumentResult>, &'static str> {
     {
-        let mut results = Vec::with_capacity(documents.len());
-        for document in documents {
-            let pdfium = init_pdfium();
-            let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
-            for part in &document.binaries {
-                let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
-                let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
-                add_page(&mut new_doc, &mut source_doc, part).map_err(|_| "Error while converting, were the page numbers correct?")?;
-            }
-            let path = job_files.get_path(&document.id);
-            new_doc.save_to_file(&path).map_err(|_| "Could not save file.")?;
+            let mut results = Vec::with_capacity(documents.len());
+            for document in documents {
+            let bytes = {
+                let pdfium = init_pdfium();
+                let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
+                for part in &document.binaries {
+                    let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
+                    let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
+                    add_page(&mut new_doc, &mut source_doc, part).map_err(|_| "Error while converting, were the page numbers correct?")?;
+                }
+                new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
+            };
+            let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
 
             results.push(DocumentResult {
-                download_url: format!("/convert/{}/{}?token={}", job_id, document.id, job_token),
+                download_url: format!("/convert/{}/{}?token={}", job_id, file_id, job_token),
                 id: document.id.to_string(),
             });
         }
