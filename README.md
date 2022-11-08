@@ -6,11 +6,15 @@
 
 ## TODOs
 
+- make environment variable for mongo_uri nicer
 - group logs for individual jobs
 - use better mechanism for setting _links
-- transform /tmp usage to database to allow running in cluster (done for result files)
 - deleting old jobs
-- validate jobs for doubled source id's or destination id's
-- validate rotation only for single pages
+- validate jobs for doubled source id's or destination id's (destination is partly fixed by using mongo gridfs)
 - retry failed operations like file download or callback
-- pin dependencies
+- pin dependencies (pdfium, docker container)
+
+## Done
+
+- transform /tmp usage to database to allow running in cluster (done for result files)
+- validate rotation only for single pages (done by turning all required pages)

@@ -16,13 +16,13 @@
             { 
                 "sourceFileId": "s1",
                 "startPageNumber": 5,
-                "endPageNumber": 5,
+                "endPageNumber": 6,
                 "rotation": 180
             },
             { 
                 "sourceFileId": "s1",
-                "startPageNumber": 6,
-                "endPageNumber": 6,
+                "startPageNumber": 7,
+                "endPageNumber": 8,
                 "rotation": -270
             }
         ]   

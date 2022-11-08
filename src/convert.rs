@@ -3,7 +3,7 @@ use futures::StreamExt;
 use log::info;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_page, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
     info!("Starting job '{}'", &job_id);
@@ -87,7 +87,7 @@ async fn process(db_client: &mongodb::Client, job_id: &String, job_token: &str, 
                 for part in &document.binaries {
                     let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
                     let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
-                    add_page(&mut new_doc, &mut source_doc, part).map_err(|_| "Error while converting, were the page numbers correct?")?;
+                    add_part(&mut new_doc, &mut source_doc, part)?;
                 }
                 new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
             };
