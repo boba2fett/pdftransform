@@ -6,7 +6,6 @@
 
 ## TODOs
 
-- prevent ssrf to mongo or secure mongo
 - group logs for individual jobs
 - use better mechanism for setting _links
 - transform /tmp usage to database to allow running in cluster
