@@ -5,9 +5,9 @@ use tokio::io::AsyncWriteExt;
 
 use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_page, init_pdfium}, files::{JobFileProvider, _get_job_files}};
 
-pub async fn process_job(job_id: String) -> () {
+pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
     info!("Starting job '{}'", &job_id);
-    let job_model = _get_job_model(&job_id).await;
+    let job_model = _get_job_model(db_client, &job_id).await;
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let ref_client = &client;
@@ -31,26 +31,26 @@ pub async fn process_job(job_id: String) -> () {
                 let source_files = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
                 let results: Result<_, &str> = process(&job_id, &job_model.token, &job_model.documents, source_files, job_files);
                 _ = match results {
-                    Ok(results) => ready(&job_id, &job_model.callback_uri, ref_client, results).await,
-                    Err(err) => error(&job_id, &job_model.callback_uri, ref_client, err).await,
+                    Ok(results) => ready(db_client, &job_id, &job_model.callback_uri, ref_client, results).await,
+                    Err(err) => error(db_client, &job_id, &job_model.callback_uri, ref_client, err).await,
                 };
             }
         Some(err) => {
-            _ = error(&job_id, &job_model.callback_uri, ref_client, err.as_ref().err().unwrap()).await;
+            _ = error(db_client, &job_id, &job_model.callback_uri, ref_client, err.as_ref().err().unwrap()).await;
         }
     }
     }
 }
 
-async fn ready(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
+async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
     info!("Finished job '{}'", &job_id);
-    let result = set_ready(job_id, results).await;
+    let result = set_ready(db_client, job_id, results).await;
     if let Err(err) = result {
-        _ = error(job_id, callback_uri, client, err).await;
+        _ = error(db_client, job_id, callback_uri, client, err).await;
         return;
     }
     if let Some(callback_uri) = callback_uri {
-        let dto = _get_job_dto(&job_id).await;
+        let dto = _get_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
             if let Err(err) = result {
@@ -60,14 +60,14 @@ async fn ready(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Cl
     }
 }
 
-async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &'static str) {
+async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &str) {
     info!("Finished job '{}' with error {}", &job_id, err);
-    let result = set_error(job_id, err).await;
+    let result = set_error(db_client, job_id, err).await;
     if let Err(_) = result {
         return;
     }
     if let Some(callback_uri) = callback_uri {
-        let dto = _get_job_dto(&job_id).await;
+        let dto = _get_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
             if let Err(err) = result {

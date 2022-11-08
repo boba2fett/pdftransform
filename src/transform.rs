@@ -1,6 +1,14 @@
 use pdfium_render::prelude::*;
 use crate::models::{Part, Rotation};
 
+
+// static PDFIUM: Lazy<Pdfium> = Lazy::new(|| {
+//     let rt = Runtime::new().unwrap();
+//     rt.block_on(async {
+//         Client::with_uri_str("mongodb://example.com").await.unwrap()
+//     })
+// });
+
 pub fn init_pdfium() -> Pdfium {
     Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
