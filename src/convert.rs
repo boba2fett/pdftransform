@@ -3,7 +3,7 @@ use futures::StreamExt;
 use log::info;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, SourceFile}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, SourceFile}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route};
 
 struct DownloadedSourceFile {
     id: String,
@@ -99,7 +99,7 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &String, job_token: &s
             let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
 
             results.push(DocumentResult {
-                download_url: format!("/convert/{}/{}?token={}", job_id, file_id, job_token),
+                download_url: file_route(job_id, &file_id, job_token),
                 id: document.id.to_string(),
             });
         }

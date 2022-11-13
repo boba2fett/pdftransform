@@ -7,7 +7,6 @@
 ## TODOs
 
 - group logs for individual jobs
-- use better mechanism for setting _links
 - deleting old jobs
 - retry failed operations like file download or callback
 
@@ -18,3 +17,4 @@
 - make environment variable for mongo_uri nicer (rewrite env variable)
 - validate jobs for doubled source id's (no race between files) or destination id's (destination is partly fixed by using mongo gridfs)
 - pin dependencies (pdfium, docker container) (for ease of use won't fix)
+- use better mechanism for setting _links

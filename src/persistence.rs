@@ -4,7 +4,7 @@ use mongodb::{Client, Collection};
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks}};
+use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks}, routes::job_route};
 
 #[derive(Database)]
 #[database("db")]
@@ -21,7 +21,7 @@ pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: Strin
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
-        _links: ConvertLinks { _self: get_self_url(&job_id, &job_model.token) },
+        _links: ConvertLinks { _self: job_route(&job_id, &job_model.token) },
         id: job_id,
     })
 }
@@ -33,7 +33,7 @@ pub async fn _get_job_dto(client: &mongodb::Client, job_id: &str) -> Result<JobD
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
-        _links: ConvertLinks { _self: get_self_url(&job_id, &job_model.token) },
+        _links: ConvertLinks { _self: job_route(&job_id, &job_model.token) },
         id: job_id,
     })
 }
@@ -84,10 +84,6 @@ pub fn generate_30_alphanumeric() -> String {
         .collect()
 }
 
-fn get_self_url(job_id: &String, job_token: &String) -> String {
-    format!("/convert/{}?token={}", &job_id, job_token)
-}
-
 pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<JobDto, &'static str> {
     let jobs = get_jobs(client);
     let job_token = job.token.clone();
@@ -100,7 +96,7 @@ pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<Job
             message: None,
             status: JobStatus::InProgress,
             results: vec![],
-            _links: ConvertLinks { _self: get_self_url(&job_id, &job_token) },
+            _links: ConvertLinks { _self: job_route(&job_id, &job_token) },
             id: job_id,
         })
     }
