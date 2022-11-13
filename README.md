@@ -17,4 +17,4 @@
 - make environment variable for mongo_uri nicer (rewrite env variable)
 - validate jobs for doubled source id's (no race between files) or destination id's (destination is partly fixed by using mongo gridfs)
 - pin dependencies (pdfium, docker container) (for ease of use won't fix)
-- use better mechanism for setting _links
+- use better mechanism for setting _links (moved building routes closer to actual routes)
