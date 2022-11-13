@@ -4,7 +4,7 @@ RUN USER=root cargo new --bin pdftransform
 WORKDIR /pdftransform
 
 RUN apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config wget -y --no-install-recommends && \
+    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget -y --no-install-recommends && \
     apt-get clean && find /var/lib/apt/lists -type f -delete
 
 COPY ./Cargo.lock ./Cargo.lock
