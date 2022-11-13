@@ -31,6 +31,7 @@ COPY --from=build /pdftransform/libpdfium.so .
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=8000
 ENV RUST_LOG=debug
+ENV RUST_CLI_COLORS=false
 EXPOSE 8000
 
 ENTRYPOINT [ "./pdftransform"]
