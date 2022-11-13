@@ -17,4 +17,4 @@
 - validate jobs for doubled source id's (no race between files) or destination id's (destination is partly fixed by using mongo gridfs)
 - pin dependencies (pdfium, docker container) (for ease of use won't fix)
 - use better mechanism for setting _links (moved building routes closer to actual routes)
-- group logs for individual jobs (won't fix until attributtes can be set easier with json logger)
+- group logs for individual jobs (using differnt logger that allows setting attributes)
