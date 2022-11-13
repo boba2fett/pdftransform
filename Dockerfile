@@ -4,22 +4,20 @@ RUN USER=root cargo new --bin pdftransform
 WORKDIR /pdftransform
 
 RUN apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget -y --no-install-recommends && \
+    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config wget -y --no-install-recommends && \
     apt-get clean && find /var/lib/apt/lists -type f -delete
 
 COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
-RUN cargo build --release
-RUN rm src/*.rs
+RUN cargo build --release && rm src/*.rs
 
 COPY ./src ./src
 
 RUN rm ./target/release/deps/pdftransform*
 
 COPY get_pdfium.sh .
-RUN chmod +x get_pdfium.sh
-RUN ./get_pdfium.sh
+RUN chmod +x get_pdfium.sh && ./get_pdfium.sh
 
 RUN cargo build --release
 
@@ -31,7 +29,7 @@ COPY --from=build /pdftransform/libpdfium.so .
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=8000
 ENV RUST_LOG=debug
-ENV RUST_CLI_COLORS=false
+ENV ROCKET_CLI_COLORS=false
 EXPOSE 8000
 
 ENTRYPOINT [ "./pdftransform"]
