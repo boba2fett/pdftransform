@@ -71,12 +71,12 @@ pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobD
         source_files: create_job.source_files,
         results: vec![],
         message: None,
-        token: generate_token()
+        token: generate_30_alphanumeric()
     };
     save_new_job(client, job).await
 }
 
-fn generate_token() -> String {
+pub fn generate_30_alphanumeric() -> String {
     thread_rng()
         .sample_iter(&Alphanumeric)
         .take(30)

@@ -5,7 +5,7 @@ use rocket::fs::FileName;
 use tokio::fs;
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
 
-use crate::{persistence::{get_job_model}, consts};
+use crate::{persistence::{get_job_model, generate_30_alphanumeric}, consts};
 
 pub async fn get_job_result_file(db_client: &mongodb::Client, job_id: &str, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
     _ = get_job_model(db_client, job_id, token).await?;
@@ -37,9 +37,8 @@ impl TempJobFileProvider {
         TempJobFileProvider {job_directory: dir}
     }
 
-    pub fn get_path(&self, id: &str) -> PathBuf
+    pub fn get_path(&self) -> PathBuf
     {
-        let file_name = FileName::new(id);
-        self.job_directory.join(file_name.as_str().unwrap())
+        self.job_directory.join(generate_30_alphanumeric())
     }
 }

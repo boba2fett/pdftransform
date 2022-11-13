@@ -3,7 +3,12 @@ use futures::StreamExt;
 use log::info;
 use tokio::io::AsyncWriteExt;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, SourceFile}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}};
+
+struct DownloadedSourceFile {
+    id: String,
+    path: PathBuf,
+}
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
     info!("Starting job '{}'", &job_id);
@@ -13,14 +18,14 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
         let ref_client = &client;
 
         let job_files = TempJobFileProvider::build(&job_id).await;
+        let ref_job_files = &job_files;
 
-        let source_files: Vec<Result<PathBuf, &'static str>> = futures::stream::iter(job_model.source_files)
+        let source_files: Vec<Result<DownloadedSourceFile, &'static str>> = futures::stream::iter(job_model.source_files)
         .map(|source_file| {
-            let path = job_files.get_path(&source_file.source_file_id);
             async move {
-                dowload_source_file(ref_client, &source_file.source_uri, path).await
+                dowload_source_file(ref_client, ref_job_files, source_file).await
             }
-        }).buffer_unordered(10).collect::<Vec<Result<PathBuf, &'static str>>>().await;
+        }).buffer_unordered(10).collect::<Vec<Result<DownloadedSourceFile, &'static str>>>().await;
 
         info!("Downloaded all files for job '{}'", &job_id);
 
@@ -77,7 +82,7 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
     }
 }
 
-async fn process(db_client: &mongodb::Client, job_id: &String, job_token: &str, documents: &Vec<Document>, source_files: Vec<&PathBuf>) -> Result<Vec<DocumentResult>, &'static str> {
+async fn process<'a>(db_client: &mongodb::Client, job_id: &String, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<DocumentResult>, &'static str> {
     {
             let mut results = Vec::with_capacity(documents.len());
             for document in documents {
@@ -85,8 +90,8 @@ async fn process(db_client: &mongodb::Client, job_id: &String, job_token: &str, 
                 let pdfium = init_pdfium();
                 let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                 for part in &document.binaries {
-                    let source_path = source_files.iter().find(|path| path.ends_with(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
-                    let mut source_doc = pdfium.load_pdf_from_file(source_path, None).map_err(|_| "Could not create document.")?;
+                    let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
+                    let mut source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
                     add_part(&mut new_doc, &mut source_doc, part)?;
                 }
                 new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
@@ -102,11 +107,12 @@ async fn process(db_client: &mongodb::Client, job_id: &String, job_token: &str, 
     }
 }
 
-async fn dowload_source_file(client: &reqwest::Client, source_file_url: &str, path: PathBuf) -> Result<PathBuf, &'static str> {
-    let mut response = client.get(source_file_url).send().await.map_err(|_| "Could not load document.")?;
+async fn dowload_source_file<'a>(client: &reqwest::Client, job_files: &TempJobFileProvider, source_file: SourceFile) -> Result<DownloadedSourceFile, &'static str> {
+    let path = job_files.get_path();
+    let mut response = client.get(&source_file.source_uri).send().await.map_err(|_| "Could not load document.")?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;
     while let Some(mut item) = response.chunk().await.map_err(|_| "Could not read response.")? {
         file.write_all_buf(&mut item).await.map_err(|_| "Could not write to file.")?;
     }
-    Ok(path)
+    Ok(DownloadedSourceFile { id: source_file.source_file_id, path })
 }
