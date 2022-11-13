@@ -90,7 +90,7 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &String, job_token: &s
                 let pdfium = init_pdfium();
                 let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                 for part in &document.binaries {
-                    let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file_id)).ok_or("Could not find corresponding source file.")?;
+                    let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
                     let mut source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
                     add_part(&mut new_doc, &mut source_doc, part)?;
                 }
@@ -109,10 +109,10 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &String, job_token: &s
 
 async fn dowload_source_file<'a>(client: &reqwest::Client, job_files: &TempJobFileProvider, source_file: SourceFile) -> Result<DownloadedSourceFile, &'static str> {
     let path = job_files.get_path();
-    let mut response = client.get(&source_file.source_uri).send().await.map_err(|_| "Could not load document.")?;
+    let mut response = client.get(&source_file.uri).send().await.map_err(|_| "Could not load document.")?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;
     while let Some(mut item) = response.chunk().await.map_err(|_| "Could not read response.")? {
         file.write_all_buf(&mut item).await.map_err(|_| "Could not write to file.")?;
     }
-    Ok(DownloadedSourceFile { id: source_file.source_file_id, path })
+    Ok(DownloadedSourceFile { id: source_file.id, path })
 }

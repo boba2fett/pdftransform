@@ -4,23 +4,23 @@
     {   "id": "d1",
         "binaries": [
             { 
-                "sourceFileId": "s1",
+                "sourceFile": "s1",
                 "startPageNumber": 1,
                 "endPageNumber": 2
             },
             { 
-                "sourceFileId": "s1",
+                "sourceFile": "s1",
                 "startPageNumber": 3,
                 "endPageNumber": 4
             },
             { 
-                "sourceFileId": "s1",
+                "sourceFile": "s1",
                 "startPageNumber": 5,
                 "endPageNumber": 6,
                 "rotation": 180
             },
             { 
-                "sourceFileId": "s1",
+                "sourceFile": "s1",
                 "startPageNumber": 7,
                 "endPageNumber": 8,
                 "rotation": -270
@@ -30,8 +30,8 @@
     ],
     "sourceFiles": [
     {
-        "sourceFileId": "s1",
-        "sourceUri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        "id": "s1",
+        "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
     }
   ]
 }

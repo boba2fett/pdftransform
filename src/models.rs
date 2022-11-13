@@ -68,14 +68,14 @@ pub struct CreateJobDto {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceFile {
-    pub source_file_id: String,
-    pub source_uri: String,
+    pub id: String,
+    pub uri: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Part {
-    pub source_file_id: String,
+    pub source_file: String,
     pub start_page_number: Option<u16>,
     pub end_page_number: Option<u16>,
     pub rotation: Option<Rotation>,
