@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use futures::StreamExt;
-use log::info;
+use kv_log_macro::info;
 use tokio::io::AsyncWriteExt;
 
 use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, SourceFile}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route};
@@ -11,7 +11,7 @@ struct DownloadedSourceFile {
 }
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
-    info!("Starting job '{}'", &job_id);
+    info!("Starting job '{}'", &job_id, {jobId: job_id});
     let job_model = _get_job_model(db_client, &job_id).await;
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
@@ -27,7 +27,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) -> () {
             }
         }).buffer_unordered(10).collect::<Vec<Result<DownloadedSourceFile, &'static str>>>().await;
 
-        info!("Downloaded all files for job '{}'", &job_id);
+        info!("Downloaded all files for job '{}'", &job_id, {jobId: job_id});
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
 
@@ -66,7 +66,7 @@ async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
 }
 
 async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &str) {
-    info!("Finished job '{}' with error {}", &job_id, err);
+    info!("Finished job '{}' with error {}", &job_id, err, {jobId: job_id});
     let result = set_error(db_client, job_id, err).await;
     if let Err(_) = result {
         return;
@@ -76,7 +76,7 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
             if let Err(err) = result {
-                info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err);
+                info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err, {jobId: job_id});
             }
         }
     }

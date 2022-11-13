@@ -18,4 +18,5 @@ futures = {version = "0.3.25"}
 rand = "0.8.5"
 pdfium-render = "0.7.24"
 log = { version = "0.4.17", features = ["kv_unstable_std"] }
-json_env_logger = { version = "0.1.1", features = ["iso-timestamps"] }
+json_env_logger2 = {version = "0.2.1", features = ["iso-timestamps"] }
+kv-log-macro = "1.0.7"

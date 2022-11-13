@@ -645,9 +645,9 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.7.1"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
+checksum = "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
 dependencies = [
  "log",
 ]
@@ -1215,10 +1215,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "json_env_logger"
-version = "0.1.1"
+name = "json_env_logger2"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e2ec540ea0448b187d3a8b4a9f13e75527d06ef76b3a2baa1cd982aecb62ce2"
+checksum = "6c7e71ad9bc3cde3ac35a75ec4bd7e49b0628a6478524b1656af04d593ceb13b"
 dependencies = [
  "chrono",
  "env_logger",
@@ -1746,7 +1746,8 @@ dependencies = [
  "bson",
  "chrono",
  "futures",
- "json_env_logger",
+ "json_env_logger2",
+ "kv-log-macro",
  "log",
  "mongodb",
  "mongodb-gridfs",
