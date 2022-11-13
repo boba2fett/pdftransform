@@ -2,8 +2,8 @@
 use std::env;
 
 use pdftransform::{models::{RootDto, JobDto, CreateJobDto, RootLinks}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto, DbClient}, convert::process_job, files::get_job_result_file};
-use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self, stream::ByteStream}, fs::NamedFile, Request, Response, http::ContentType};
-use rocket_db_pools::{Database};
+use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, stream::ByteStream}, http::ContentType};
+use rocket_db_pools::Database;
 use futures::StreamExt;
 
 #[launch]
