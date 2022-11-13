@@ -2,11 +2,10 @@
 
 - Using Pdfium to translate source documents into output documents
 - post content from example.json to /convert
-- to run in dev, get pdfium, start mongodb, provide ROCKET_DATABASES='{db={url="mongodb://localhost:27017"}}'
+- to run in dev, get pdfium, start mongodb, provide MONGO_URI (defaults to "mongodb://localhost:27017")
 
 ## TODOs
 
-- make environment variable for mongo_uri nicer
 - group logs for individual jobs
 - use better mechanism for setting _links
 - deleting old jobs
@@ -18,3 +17,4 @@
 
 - transform /tmp usage to database to allow running in cluster (done for result files)
 - validate rotation only for single pages (done by turning all required pages)
+- make environment variable for mongo_uri nicer (rewrite env variable)

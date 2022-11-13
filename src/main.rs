@@ -1,4 +1,6 @@
 #[macro_use] extern crate rocket;
+use std::env;
+
 use pdftransform::{models::{RootDto, JobDto, CreateJobDto, RootLinks}, consts::{VERSION, NAME}, persistence::{create_new_job, get_job_dto, DbClient}, convert::process_job, files::get_job_result_file};
 use rocket::{serde::json::Json, response::{status::{Conflict, NotFound}, self, stream::ByteStream}, fs::NamedFile, Request, Response, http::ContentType};
 use rocket_db_pools::{Database};
@@ -6,6 +8,9 @@ use futures::StreamExt;
 
 #[launch]
 async fn rocket() -> _ {
+    let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+    env::set_var("ROCKET_DATABASES", format!("{{db={{url=\"{mongo_uri}\"}}}}"));
+    
     json_env_logger::init();
     rocket::build()
         .attach(DbClient::init())

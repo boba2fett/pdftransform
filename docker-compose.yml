@@ -5,7 +5,7 @@ services:
   pdftransform:
     build: .
     environment:
-      ROCKET_DATABASES: '{db={url="mongodb://mongodb:27017"}}'
+      MONGO_URI: mongodb://mongodb:27017
     ports:
       - 8000:8000
     depends_on:
