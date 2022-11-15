@@ -4,9 +4,16 @@
 - post content from example.json to /convert
 - to run in dev, get pdfium, start mongodb, provide MONGO_URI (defaults to "mongodb://localhost:27017")
 
+## Runtime environment variables
+
+- EXPIRE_AFTER_SECONDS=90000 25h expire time for jobs (always set the same with same mongodb as index of mongodb is not updated)
+- PARALLELISM=10 parallel downloads for source files
+
 ## TODOs
 
 - retry failed operations like file download or callback
+- further design desicions regarding running in cluster
+- providing page count or preview images
 
 ## Done
 
@@ -17,4 +24,4 @@
 - pin dependencies (pdfium, docker container) (for ease of use won't fix)
 - use better mechanism for setting _links (moved building routes closer to actual routes)
 - group logs for individual jobs (using differnt logger that allows setting attributes)
-- deleting old jobs (using expire_after and for gridfs setting uploadDate on chunks collection)
+- deleting old jobs (using expire_after with default 25h and for gridfs setting uploadDate on chunks collection)
