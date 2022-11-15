@@ -8,9 +8,8 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) {
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         
-        info!("Downloaded all files for job '{}'", &job_id, {jobId: job_id});
-
         let source_files = download_source_files(&client, &job_id, job_model.source_files).await;
+        info!("Downloaded all files for job '{}'", &job_id, {jobId: job_id});
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
 
