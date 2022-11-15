@@ -1,6 +1,6 @@
-use std::{str::FromStr};
+use std::{str::FromStr, time::Duration};
 use bson::{doc, oid::ObjectId};
-use mongodb::{Client, Collection};
+use mongodb::{Client, Collection, bson::DateTime, options::{ClientOptions, IndexOptions}, IndexModel, error::Error};
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
 
@@ -10,7 +10,23 @@ use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, Do
 #[database("db")]
 pub struct DbClient(pub Client);
 
-fn get_jobs<'a>(db_client: &mongodb::Client) -> Collection<JobModel> {
+pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, Error> {
+    let options = ClientOptions::parse(&mongo_uri).await?;
+    let client = Client::with_options(options)?;
+    let jobs = get_jobs(&client);
+
+    let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
+    let index = IndexModel::builder()
+        .keys(doc! {"created": 1})
+        .options(options)
+        .build();
+
+    jobs.create_index(index.clone(), None).await?;
+
+    Ok(client)
+}
+
+fn get_jobs(db_client: &mongodb::Client) -> Collection<JobModel> {
     db_client.database(NAME).collection("jobs")
 }
 
@@ -71,7 +87,8 @@ pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobD
         source_files: create_job.source_files,
         results: vec![],
         message: None,
-        token: generate_30_alphanumeric()
+        token: generate_30_alphanumeric(),
+        created: DateTime::now(),
     };
     save_new_job(client, job).await
 }

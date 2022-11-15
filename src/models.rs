@@ -1,6 +1,7 @@
 use bson::oid::ObjectId;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
+use mongodb::bson::DateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,6 +48,7 @@ pub struct JobModel {
     pub results: Vec<DocumentResult>,
     pub message: Option<String>,
     pub token: String,
+    pub created: DateTime,
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
