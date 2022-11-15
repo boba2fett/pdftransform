@@ -14,6 +14,8 @@
 - retry failed operations like file download or callback
 - further design desicions regarding running in cluster
 - providing page count or preview images
+- evaluate cancel of jobs
+- cache open sourcefiles
 
 ## Done
 
