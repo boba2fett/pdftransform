@@ -60,6 +60,12 @@ impl TempJobFileProvider {
         TempJobFileProvider {job_directory: dir}
     }
 
+    pub async fn clean_up(&self) {
+        if let Err(err) = fs::remove_dir_all(&self.job_directory).await {
+            warn!("Error occured, while deleting temp job files for {}: {}", &self.job_directory.to_str().unwrap_or("<none>"), &err)
+        }
+    }
+
     pub fn get_path(&self) -> PathBuf
     {
         self.job_directory.join(generate_30_alphanumeric())

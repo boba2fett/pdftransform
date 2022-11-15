@@ -1,14 +1,14 @@
 use kv_log_macro::info;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
     let job_model = _get_job_model(db_client, &job_id).await;
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
-        
-        let source_files = download_source_files(&client, &job_id, job_model.source_files).await;
+        let job_files = TempJobFileProvider::build(&job_id).await;
+        let source_files = download_source_files(&client, job_model.source_files, &job_files).await;
         info!("Downloaded all files for job '{}'", &job_id, {jobId: job_id});
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
@@ -22,10 +22,11 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) {
                     Err(err) => error(db_client, &job_id, &job_model.callback_uri, &client, err).await,
                 };
             }
-        Some(err) => {
-            error(db_client, &job_id, &job_model.callback_uri, &client, err.as_ref().err().unwrap()).await;
+            Some(err) => {
+                error(db_client, &job_id, &job_model.callback_uri, &client, err.as_ref().err().unwrap()).await;
+            }
         }
-    }
+        job_files.clean_up().await;
     }
 }
 
@@ -66,8 +67,8 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
 
 async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<DocumentResult>, &'static str> {
     {
-            let mut results = Vec::with_capacity(documents.len());
-            for document in documents {
+        let mut results = Vec::with_capacity(documents.len());
+        for document in documents {
             let bytes = {
                 let pdfium = init_pdfium();
                 let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;

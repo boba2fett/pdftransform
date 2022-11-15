@@ -10,9 +10,8 @@ pub struct DownloadedSourceFile {
     pub path: PathBuf,
 }
 
-pub async fn download_source_files(client: &reqwest::Client, job_id: &str, source_files: Vec<SourceFile>) -> Vec<Result<DownloadedSourceFile, &'static str>> {
+pub async fn download_source_files(client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>> {
     let ref_client = &client;
-    let job_files = TempJobFileProvider::build(job_id).await;
     let ref_job_files = &job_files;
     let parallelism = unsafe {PARALLELISM};
     futures::stream::iter(source_files)
