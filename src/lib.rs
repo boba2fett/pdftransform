@@ -5,3 +5,4 @@ pub mod convert;
 pub mod transform;
 pub mod files;
 pub mod routes;
+pub mod download;

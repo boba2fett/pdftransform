@@ -17,7 +17,7 @@ fn get_jobs<'a>(db_client: &mongodb::Client) -> Collection<JobModel> {
 pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: String) -> Result<JobDto, &'static str> {
     let job_model = get_job_model(client, &job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
-    return Ok(JobDto {
+    Ok(JobDto {
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
@@ -29,7 +29,7 @@ pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: Strin
 pub async fn _get_job_dto(client: &mongodb::Client, job_id: &str) -> Result<JobDto, &'static str> {
     let job_model = _get_job_model(client, &job_id).await?;
     let job_id = job_model.id.unwrap().to_string();
-    return Ok(JobDto {
+    Ok(JobDto {
         message: job_model.message,
         status: job_model.status,
         results: job_model.results,
