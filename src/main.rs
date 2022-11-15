@@ -22,7 +22,7 @@ async fn setup_expiery() {
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 
     let expire = match expire {
-        Ok(Ok(expire)) => expire,
+        Ok(Ok(expire)) if expire > 0 => expire,
         _ => 60*60*25,
     };
     let client = persistence::set_expire_after(&mongo_uri, expire).await.unwrap();
