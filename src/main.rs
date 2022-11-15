@@ -1,4 +1,5 @@
 use std::env;
+use pdftransform::consts::PARALLELISM;
 use pdftransform::persistence::{DbClient, self};
 use pdftransform::files;
 use pdftransform::routes::{root, job, create_job, file};
@@ -7,7 +8,8 @@ use rocket_db_pools::Database;
 
 #[launch]
 async fn rocket() -> _ {
-    setup_expiery().await;
+    setup_expire_time().await;
+    setup_parallelism();
 
     json_env_logger2::init();
     rocket::build()
@@ -15,7 +17,7 @@ async fn rocket() -> _ {
         .mount("/", routes![root, job, create_job, file])
 }
 
-async fn setup_expiery() {
+async fn setup_expire_time() {
     let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
     env::set_var("ROCKET_DATABASES", format!("{{db={{url=\"{mongo_uri}\"}}}}"));
 
@@ -28,4 +30,14 @@ async fn setup_expiery() {
     let client = persistence::set_expire_after(&mongo_uri, expire).await.unwrap();
 
     files::set_expire_after(&client, expire).await.unwrap();
+}
+
+fn setup_parallelism() {
+    let parallelism = env::var("PARALLELISM").map(|expire| expire.parse::<usize>());
+    unsafe {
+        PARALLELISM = match parallelism {
+            Ok(Ok(parallelism)) if parallelism > 0 => parallelism,
+            _ => PARALLELISM,
+        }
+    }
 }
