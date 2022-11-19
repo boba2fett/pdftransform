@@ -84,7 +84,9 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                         else {
                             let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
                             *cache_ref = Some((&part.source_file, source_doc));
-                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                            if add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)? {
+                                *cache_ref = None;
+                            }
                         }
                         
                     }
