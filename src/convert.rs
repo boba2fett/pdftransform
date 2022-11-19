@@ -32,7 +32,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String) {
 }
 
 async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
-    info!("Finished job '{}'", &job_id);
+    info!("Finished job '{}'", &job_id, {jobId: job_id});
     let result = set_ready(db_client, job_id, results).await;
     if let Err(err) = result {
         error(db_client, job_id, callback_uri, client, err).await;
