@@ -5,7 +5,7 @@ pub fn init_pdfium() -> Pdfium {
     Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
 
-pub fn add_part<'a>(new_document: &mut PdfDocument, source_document: &'a PdfDocument, part: &Part) -> Result<Option<&'a PdfDocument<'a>>, &'static str> {
+pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, part: &Part) -> Result<bool, &'static str> {
     let start_page_number = part.start_page_number.unwrap_or(1);
     let end_page_number = part.end_page_number.unwrap_or(source_document.pages().len());
     validate_pages(start_page_number, end_page_number, source_document)?;
@@ -16,12 +16,8 @@ pub fn add_part<'a>(new_document: &mut PdfDocument, source_document: &'a PdfDocu
         start_page_number - 1..=end_page_number - 1,
         new_document.pages().len()
     ).map_err(|_| "Could not transfer pages.")?;
-    if turned {
-        Ok(None)
-    }
-    else {
-        Ok(Some(source_document))
-    }
+    
+    Ok(turned)
 }
 
 fn validate_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument) -> Result<(), &'static str> {
