@@ -9,14 +9,14 @@ rocket_db_pools = {version = "0.1.0-rc.2", features = ["mongodb"]}
 mongodb = "2.3.1"
 mongodb-gridfs = "0.2.2"
 bson = { version = "2.4.0", features = ["chrono-0_4"] }
-tokio = "1.21.2"
-chrono = "0.4.22"
+tokio = "1.22.0"
+chrono = "0.4.23"
 serde = "1.0.147"
 serde_repr = "0.1.9"
 reqwest = {version = "0.11.12", features = ["gzip", "deflate", "stream", "json"]}
 futures = {version = "0.3.25"}
 rand = "0.8.5"
-pdfium-render = "0.7.24"
+pdfium-render = "0.7.25"
 log = { version = "0.4.17", features = ["kv_unstable_std"] }
 json_env_logger2 = {version = "0.2.1", features = ["iso-timestamps"] }
 kv-log-macro = "1.0.7"
