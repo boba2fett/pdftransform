@@ -68,12 +68,12 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
 
 async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<DocumentResult>, &'static str> {
     {
-        let mut results = Vec::with_capacity(documents.len());
-        {
+        let results: Vec<_> = {
             let pdfium = init_pdfium();
             let mut cache: Option<(&str, PdfDocument)> = None;
-            let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
-            for document in documents {
+            
+            documents.iter().map(|document| -> Result<_, &'static str> {
+                let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
                 let bytes = {
                     let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                     for part in &document.binaries {
@@ -88,23 +88,22 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                                 *cache_ref = None;
                             }
                         }
-                        
                     }
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
-                results.push(async move {
+                Ok(async move {
                     let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
 
                     Ok::<DocumentResult, &'static str>(DocumentResult {
                         download_url: file_route(job_id, &file_id, job_token),
                         id: document.id.to_string(),
                     })
-                });
-            }
-        }
+                })
+            }).collect()
+        };
         let mut document_results = Vec::with_capacity(documents.len());
         for result in results {
-            let value = result.await?;
+            let value = result?.await?;
             document_results.push(value);
         }
         Ok(document_results)
