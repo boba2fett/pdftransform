@@ -1,4 +1,5 @@
 use kv_log_macro::info;
+use pdfium_render::prelude::PdfDocument;
 
 use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
 
@@ -68,24 +69,42 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
 async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<DocumentResult>, &'static str> {
     {
         let mut results = Vec::with_capacity(documents.len());
-        for document in documents {
-            let bytes = {
-                let pdfium = init_pdfium();
-                let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
-                for part in &document.binaries {
-                    let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                    let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
-                    add_part(&mut new_doc, &source_doc, part)?;
-                }
-                new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
-            };
-            let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
+        {
+            let pdfium = init_pdfium();
+            let mut cache: Option<(&str, PdfDocument)> = None;
+            let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
+            for document in documents {
+                let bytes = {
+                    let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
+                    for part in &document.binaries {
+                        let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
+                        if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
+                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                        }
+                        else {
+                            let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
+                            *cache_ref = Some((&part.source_file, source_doc));
+                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                        }
+                        
+                    }
+                    new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
+                };
+                results.push(async move {
+                    let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
 
-            results.push(DocumentResult {
-                download_url: file_route(job_id, &file_id, job_token),
-                id: document.id.to_string(),
-            });
+                    Ok::<DocumentResult, &'static str>(DocumentResult {
+                        download_url: file_route(job_id, &file_id, job_token),
+                        id: document.id.to_string(),
+                    })
+                });
+            }
         }
-        Ok(results)
+        let mut document_results = Vec::with_capacity(documents.len());
+        for result in results {
+            let value = result.await?;
+            document_results.push(value);
+        }
+        Ok(document_results)
     }
 }
