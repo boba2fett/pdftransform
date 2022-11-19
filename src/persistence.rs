@@ -123,7 +123,7 @@ pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<Job
 pub async fn set_ready(client: &mongodb::Client, job_id: &str, results: Vec<DocumentResult>) -> Result<(), &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
-        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"results": bson::to_bson(&results).ok()}}, None).await {
+        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"results": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None).await {
             if result.modified_count > 0 {
                 return Ok(())
             }
@@ -135,7 +135,7 @@ pub async fn set_ready(client: &mongodb::Client, job_id: &str, results: Vec<Docu
 pub async fn set_error(client: &mongodb::Client, job_id: &str, err: &str) -> Result<(), &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
-        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32, "message": err}}, None).await {
+        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32, "message": err, "finished": DateTime::now()}}, None).await {
             if result.modified_count > 0 {
                 return Ok(())
             }
