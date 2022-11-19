@@ -15,7 +15,7 @@
 - further design desicions regarding running in cluster
 - providing page count or preview images
 - evaluate cancel of jobs
-- cache open sourcefiles
+- cache open sourcefiles (partly wip)
 
 ## Done
 
