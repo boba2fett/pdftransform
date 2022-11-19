@@ -5,21 +5,26 @@ pub fn init_pdfium() -> Pdfium {
     Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
 
-pub fn add_part(new_document: &mut PdfDocument, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
+pub fn add_part<'a>(new_document: &mut PdfDocument, source_document: &'a PdfDocument, part: &Part) -> Result<Option<&'a PdfDocument<'a>>, &'static str> {
     let start_page_number = part.start_page_number.unwrap_or(1);
     let end_page_number = part.end_page_number.unwrap_or(source_document.pages().len());
     validate_pages(start_page_number, end_page_number, source_document)?;
     
-    turn_single_pages(start_page_number, end_page_number, source_document, part)?;
+    let turned = turn_single_pages(start_page_number, end_page_number, source_document, part)?;
     new_document.pages()
     .copy_page_range_from_document(&source_document,
         start_page_number - 1..=end_page_number - 1,
         new_document.pages().len()
     ).map_err(|_| "Could not transfer pages.")?;
-    Ok(())
+    if turned {
+        Ok(None)
+    }
+    else {
+        Ok(Some(source_document))
+    }
 }
 
-fn validate_pages(start_page_number: u16, end_page_number: u16, source_document: &mut PdfDocument) -> Result<(), &'static str> {
+fn validate_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument) -> Result<(), &'static str> {
     if start_page_number > end_page_number {
         return Err("Start page number can't be greater than end page number.")
     }
@@ -30,7 +35,7 @@ fn validate_pages(start_page_number: u16, end_page_number: u16, source_document:
     Ok(())
 }
 
-fn turn_single_pages(start_page_number: u16, end_page_number: u16, source_document: &mut PdfDocument, part: &Part) -> Result<(), &'static str> {
+fn turn_single_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<bool, &'static str> {
     if part.rotation.is_some() {
         let part_rotation: i32 = part.rotation.unwrap_or(Rotation::P0).as_degrees();
         let part_rotation: i32 = {
@@ -57,6 +62,9 @@ fn turn_single_pages(start_page_number: u16, end_page_number: u16, source_docume
             };
             page.set_rotation(new_rotation);
         }
+        Ok(true)
     }
-    Ok(())
+    else {
+        Ok(false)
+    }
 }

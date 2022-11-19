@@ -1,4 +1,5 @@
 use kv_log_macro::info;
+use pdfium_render::prelude::PdfDocument;
 
 use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
 
@@ -74,8 +75,8 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                 let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                 for part in &document.binaries {
                     let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                    let mut source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
-                    add_part(&mut new_doc, &mut source_doc, part)?;
+                    let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
+                    add_part(&mut new_doc, &source_doc, part)?;
                 }
                 new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
             };
