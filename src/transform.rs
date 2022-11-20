@@ -35,7 +35,7 @@ fn validate_pages(start_page_number: u16, end_page_number: u16, source_document:
     Ok(())
 }
 
-fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<bool, &'static str> {
+fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
     if part.rotation.is_some() {
         let part_rotation: i32 = part.rotation.unwrap_or(Rotation::P0).as_degrees();
         let part_rotation: i32 = {
@@ -62,9 +62,6 @@ fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &Pd
             };
             page.set_rotation(new_rotation);
         }
-        Ok(true)
     }
-    else {
-        Ok(false)
-    }
+    Ok(())
 }
