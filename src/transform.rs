@@ -19,7 +19,7 @@ pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, p
         new_start_page_number - 1
     ).map_err(|_| "Could not transfer pages.")?;
     
-    turn_single_pages(new_start_page_number, new_end_page_number, new_document, part)?;
+    turn_pages(new_start_page_number, new_end_page_number, new_document, part)?;
 
     Ok(())
 }
@@ -35,7 +35,7 @@ fn validate_pages(start_page_number: u16, end_page_number: u16, source_document:
     Ok(())
 }
 
-fn turn_single_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<bool, &'static str> {
+fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<bool, &'static str> {
     if part.rotation.is_some() {
         let part_rotation: i32 = part.rotation.unwrap_or(Rotation::P0).as_degrees();
         let part_rotation: i32 = {

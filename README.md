@@ -15,7 +15,6 @@
 - further design desicions regarding running in cluster
 - providing page count or preview images
 - evaluate cancel of jobs
-- cache open sourcefiles (partly wip)
 
 ## Done
 
@@ -27,3 +26,4 @@
 - use better mechanism for setting _links (moved building routes closer to actual routes)
 - group logs for individual jobs (using differnt logger that allows setting attributes)
 - deleting old jobs (using expire_after with default 25h and for gridfs setting uploadDate on chunks collection)
+- cache open sourcefiles (if in order)
