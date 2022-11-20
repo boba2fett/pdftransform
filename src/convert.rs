@@ -78,17 +78,13 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                     let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                     for part in &document.binaries {
                         if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
-                            if add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)? {
-                                *cache_ref = None;
-                            }
+                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         }
                         else {
                             let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
                             let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
                             *cache_ref = Some((&part.source_file, source_doc));
-                            if add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)? {
-                                *cache_ref = None;
-                            }
+                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         }
                     }
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
