@@ -42,11 +42,11 @@ pub fn file_route(job_id: &str, file_id: &str, token: &str) -> String {
 #[post("/convert", format = "json", data="<create_job>")]
 pub async fn create_job(db_client: &DbClient, create_job: Json<CreateJobDto>) -> Result<Json<JobDto>, Conflict<&'static str>> {
     match create_new_job(&db_client, create_job.0).await {
-        Ok(job_dto) => {
+        Ok((job_dto, job_model)) => {
             let job_id = job_dto.id.clone();
             let db_client_ref = db_client.0.clone();
             tokio::spawn(async move {
-                process_job(&db_client_ref, job_id).await
+                process_job(&db_client_ref, job_id, Some(job_model)).await
             });
             Ok(Json(job_dto))
         },

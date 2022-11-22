@@ -36,7 +36,7 @@ pub struct ConvertLinks {
     pub _self: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JobModel {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -51,7 +51,7 @@ pub struct JobModel {
     pub created: DateTime,
 }
 
-#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum JobStatus {
     InProgress = 0,
@@ -67,14 +67,14 @@ pub struct CreateJobDto {
     pub source_files: Vec<SourceFile>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceFile {
     pub id: String,
     pub uri: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Part {
     pub source_file: String,
@@ -102,14 +102,14 @@ impl Rotation {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Document {
     pub id: String,
     pub binaries: Vec<Part>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentResult {
     pub id: String,

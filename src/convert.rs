@@ -1,11 +1,11 @@
 use kv_log_macro::info;
 use pdfium_render::prelude::PdfDocument;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, JobModel}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
 
-pub async fn process_job(db_client: &mongodb::Client, job_id: String) {
+pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model: Option<JobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
-    let job_model = _get_job_model(db_client, &job_id).await;
+    let job_model = job_model.ok_or(_get_job_model(db_client, &job_id).await);
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;

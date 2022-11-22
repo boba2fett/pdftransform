@@ -78,7 +78,7 @@ pub async fn _get_job_model(client: &mongodb::Client, job_id: &str) -> Result<Jo
     Err("Could not find job")
 }
 
-pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobDto) -> Result<JobDto, &'static str> {
+pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobDto) -> Result<(JobDto, JobModel), &'static str> {
     let job = JobModel {
         id: None,
         status: JobStatus::InProgress,
@@ -88,7 +88,7 @@ pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobD
         results: vec![],
         message: None,
         token: generate_30_alphanumeric(),
-        created: DateTime::now(),
+        created: DateTime::now()
     };
     save_new_job(client, job).await
 }
@@ -101,21 +101,24 @@ pub fn generate_30_alphanumeric() -> String {
         .collect()
 }
 
-pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<JobDto, &'static str> {
+pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<(JobDto, JobModel), &'static str> {
     let jobs = get_jobs(client);
-    let job_token = job.token.clone();
+    let job_clone = job.clone();
     if let Ok(insert_result) = jobs.insert_one(job, None).await {
         let id = insert_result
         .inserted_id
         .as_object_id().expect("msg");
         let job_id = id.to_string();
-        return Ok(JobDto {
+        return Ok((JobDto {
             message: None,
             status: JobStatus::InProgress,
             results: vec![],
-            _links: ConvertLinks { _self: job_route(&job_id, &job_token) },
+            _links: ConvertLinks { _self: job_route(&job_id, &job_clone.token) },
             id: job_id,
-        })
+        }, JobModel {
+            id: Some(id),
+            ..job_clone
+        }))
     }
     Err("Could not save job")
 }
