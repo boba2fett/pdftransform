@@ -69,6 +69,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
     Ok(PreviewResult {
         page_count: preview_page_results.len(),
         pages: preview_page_results,
+        attachments: preview_attachment_results,
         signatures: results.2,
         protected: results.3,
     })

@@ -25,6 +25,7 @@ pub struct RootLinks<'a> {
 pub struct PreviewResult {
     pub page_count: usize,
     pub pages: Vec<PreviewPageResult>,
+    pub attachments: Vec<PreviewAttachmentResult>,
     pub signatures: Vec<Signature>,
     pub protected: bool,
 }

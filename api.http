@@ -19,3 +19,8 @@ POST {{endpoint}}/preview
 Content-Type: application/pdf
 
 < samples/sample06.pdf
+###
+POST {{endpoint}}/preview
+Content-Type: application/pdf
+
+< samples/example_041.pdf
