@@ -76,7 +76,7 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                 let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
                 let bytes = {
                     let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
-                    for part in &document.binaries {
+                    for part in &document.parts {
                         if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
                             add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         }

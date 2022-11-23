@@ -155,7 +155,7 @@ impl Rotation {
 #[serde(rename_all = "camelCase")]
 pub struct Document {
     pub id: String,
-    pub binaries: Vec<Part>,
+    pub parts: Vec<Part>,
     pub attachments: Vec<Attachment>,
 }
 

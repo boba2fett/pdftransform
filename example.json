@@ -2,7 +2,7 @@
     "callbackUri": "https://en6nv5h9gx7s3.x.pipedream.net/",
     "documents": [
     {   "id": "d1",
-        "binaries": [
+        "parts": [
             { 
                 "sourceFile": "s1",
                 "startPageNumber": 1,
