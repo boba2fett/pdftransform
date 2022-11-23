@@ -7,7 +7,7 @@ use rocket::fs::FileName;
 use tokio::fs;
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
 
-use crate::{persistence::{get_job_model, generate_30_alphanumeric}, consts::{self}};
+use crate::{persistence::{get_job_model, generate_30_alphanumeric, get_preview_model}, consts::{self}};
 
 const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
@@ -19,6 +19,15 @@ fn get_bucket(client: &mongodb::Client) -> GridFSBucket {
 
 pub async fn get_job_result_file(client: &mongodb::Client, job_id: &str, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
     _ = get_job_model(client, job_id, token).await?;
+    _get_result_file(client, file_id).await
+}
+
+pub async fn get_preview_result_file(client: &mongodb::Client, preview_id: &str, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
+    _ = get_preview_model(client, preview_id, token).await?;
+    _get_result_file(client, file_id).await
+}
+
+async fn _get_result_file(client: &mongodb::Client, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
     let bucket = get_bucket(client);
     if let Ok(id) = ObjectId::from_str(file_id) {
         let cursor = bucket.open_download_stream(id).await.map_err(|_| "Could not find file.")?;
@@ -27,7 +36,7 @@ pub async fn get_job_result_file(client: &mongodb::Client, job_id: &str, token: 
     Err("Could not find file.")
 }
 
-pub async fn store_job_result_file(client: &mongodb::Client, file_name: &str, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
+pub async fn store_result_file(client: &mongodb::Client, file_name: &str, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
     let mut bucket = get_bucket(client);
     let file_id = bucket.upload_from_stream(file_name, source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
     let chunks = client.database(consts::NAME).collection::<()>(CHUNKS_COLLECTION);
@@ -75,5 +84,9 @@ impl TempJobFileProvider {
     pub fn get_path(&self) -> PathBuf
     {
         self.job_directory.join(generate_30_alphanumeric())
+    }
+
+    pub fn get_one() -> PathBuf {
+        env::temp_dir().join(generate_30_alphanumeric())
     }
 }

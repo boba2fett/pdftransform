@@ -1,7 +1,7 @@
 use kv_log_macro::info;
 use pdfium_render::prelude::PdfDocument;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, JobModel}, transform::{add_part, init_pdfium}, files::{store_job_result_file, TempJobFileProvider}, routes::file_route, download::{download_source_files, DownloadedSourceFile}};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, JobModel}, transform::{add_part, init_pdfium}, files::{store_result_file, TempJobFileProvider}, routes::convert_file_route, download::{download_source_files, DownloadedSourceFile}};
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model: Option<JobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
@@ -90,10 +90,10 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {
-                    let file_id = store_job_result_file(db_client, &document.id, &*bytes).await?;
+                    let file_id = store_result_file(db_client, &document.id, &*bytes).await?;
 
                     Ok::<DocumentResult, &'static str>(DocumentResult {
-                        download_url: file_route(job_id, &file_id, job_token),
+                        download_url: convert_file_route(job_id, &file_id, job_token),
                         id: document.id.to_string(),
                     })
                 })

@@ -16,6 +16,28 @@ pub struct RootDto<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct RootLinks<'a> {
     pub convert: &'a str,
+    pub preview: &'a str,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewResult {
+    pub pages: Vec<PreviewPageResult>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewPageResult {
+    pub download_url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewModel {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub token: String,
+    pub created: DateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

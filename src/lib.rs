@@ -2,6 +2,7 @@ pub mod models;
 pub mod consts;
 pub mod persistence;
 pub mod convert;
+pub mod preview;
 pub mod transform;
 pub mod files;
 pub mod routes;

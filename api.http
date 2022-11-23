@@ -1,0 +1,16 @@
+@endpoint = http://localhost:8000
+@job = /convert/637e3f995f89417bd869088a?token=uFFS5ySQTT4uV49s4HR4w5XFIOPURs
+###
+GET {{endpoint}}
+###
+POST {{endpoint}}/convert
+Content-Type: application/json
+
+< example.json
+###
+GET {{endpoint}}{{job}}
+###
+POST {{endpoint}}/preview
+Content-Type: application/pdf
+
+< example_041.pdf

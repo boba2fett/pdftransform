@@ -4,7 +4,7 @@ use mongodb::{Client, Collection, bson::DateTime, options::{ClientOptions, Index
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks}, routes::job_route};
+use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks, PreviewModel}, routes::job_route};
 
 #[derive(Database)]
 #[database("db")]
@@ -14,6 +14,7 @@ pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, E
     let options = ClientOptions::parse(&mongo_uri).await?;
     let client = Client::with_options(options)?;
     let jobs = get_jobs(&client);
+    let previews = get_jobs(&client);
 
     let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
     let index = IndexModel::builder()
@@ -22,12 +23,17 @@ pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, E
         .build();
 
     jobs.create_index(index.clone(), None).await?;
+    previews.create_index(index, None).await?;
 
     Ok(client)
 }
 
 fn get_jobs(db_client: &mongodb::Client) -> Collection<JobModel> {
     db_client.database(NAME).collection("jobs")
+}
+
+fn get_previews(db_client: &mongodb::Client) -> Collection<PreviewModel> {
+    db_client.database(NAME).collection("previews")
 }
 
 pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: String) -> Result<JobDto, &'static str> {
@@ -52,6 +58,33 @@ pub async fn _get_job_dto(client: &mongodb::Client, job_id: &str) -> Result<JobD
         _links: ConvertLinks { _self: job_route(&job_id, &job_model.token) },
         id: job_id,
     })
+}
+
+pub async fn get_preview_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<PreviewModel, &'static str> {
+    let previews = get_previews(client);
+    if let Ok(id) = ObjectId::from_str(&job_id) {
+        if let Ok(result) = previews.find_one(Some(doc!{"_id": id, "token": token}), None).await {
+            if let Some(preview_model) = result {
+                return Ok(preview_model)
+            }
+        }
+    }
+    Err("Could not find job")
+}
+
+pub async fn save_new_preview(client: &mongodb::Client, preview: PreviewModel) -> Result<PreviewModel, &'static str> {
+    let previews = get_previews(client);
+    let preview_clone = preview.clone();
+    if let Ok(insert_result) = previews.insert_one(preview, None).await {
+        let id = insert_result
+        .inserted_id
+        .as_object_id().unwrap();
+        return Ok(PreviewModel {
+            id: Some(id),
+            ..preview_clone
+        })
+    }
+    Err("Could not save job")
 }
 
 pub async fn get_job_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<JobModel, &'static str> {
@@ -107,7 +140,7 @@ pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<(Jo
     if let Ok(insert_result) = jobs.insert_one(job, None).await {
         let id = insert_result
         .inserted_id
-        .as_object_id().expect("msg");
+        .as_object_id().unwrap();
         let job_id = id.to_string();
         return Ok((JobDto {
             message: None,

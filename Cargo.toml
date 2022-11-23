@@ -20,3 +20,4 @@ pdfium-render = "0.7.25"
 log = { version = "0.4.17", features = ["kv_unstable_std"] }
 json_env_logger2 = {version = "0.2.1", features = ["iso-timestamps"] }
 kv-log-macro = "1.0.7"
+image = "0.24.5"
