@@ -44,6 +44,13 @@ pub struct PreviewPageResult {
     pub download_url: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewAttachmentResult {
+    pub name: String,
+    pub download_url: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewModel {

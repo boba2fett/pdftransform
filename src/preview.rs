@@ -6,7 +6,7 @@ use mongodb::Client;
 use pdfium_render::{render_config::PdfRenderConfig, prelude::PdfDocument};
 use tokio::fs;
 
-use crate::{models::{PreviewResult, PreviewModel, PreviewPageResult, Signature}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::preview_file_route};
+use crate::{models::{PreviewResult, PreviewModel, PreviewPageResult, Signature, PreviewAttachmentResult}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::preview_file_route};
 
 pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult, &'static str> {
     let token = generate_30_alphanumeric();
@@ -20,7 +20,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
     let token = &token;
 
     let file_provider = TempJobFileProvider::build(&id).await;
-    let results: (Vec<_>, Vec<Signature>, bool) = {
+    let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = init_pdfium();
         let document = pdfium.load_pdf_from_file(&file, None).map_err(|_| "Could not open document.")?;
 
@@ -40,20 +40,37 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
                 })
             })
         }).collect();
-        (pages, signatures(&document), is_protected(&document).unwrap_or(false))
+        let attachments: Vec<_> = document.attachments().iter().map(|(attachment)| -> Result<_, &'static str> {
+            let name = attachment.name();
+            let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
+            
+            Ok(async move {
+                let file_id = store_result_file(&client, &name, &*bytes).await?;
+                Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
+                    name,
+                    download_url: preview_file_route(&id, &file_id, &token)
+                })
+            })
+        }).collect();
+        (pages, attachments, signatures(&document), is_protected(&document).unwrap_or(false))
     };
-    let mut preview_results = Vec::with_capacity(results.0.len());
+    let mut preview_page_results = Vec::with_capacity(results.0.len());
     for result in results.0 {
         let value = result?.await?;
-        preview_results.push(value);
+        preview_page_results.push(value);
+    }
+    let mut preview_attachment_results = Vec::with_capacity(results.1.len());
+    for result in results.1 {
+        let value = result?.await?;
+        preview_attachment_results.push(value);
     }
     file_provider.clean_up().await;
     _ = fs::remove_file(&file).await;
     Ok(PreviewResult {
-        page_count: preview_results.len(),
-        pages: preview_results,
-        signatures: results.1,
-        protected: results.2,
+        page_count: preview_page_results.len(),
+        pages: preview_page_results,
+        signatures: results.2,
+        protected: results.3,
     })
 }
 
