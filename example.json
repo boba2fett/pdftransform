@@ -25,7 +25,13 @@
                 "endPageNumber": 8,
                 "rotation": -270
             }
-        ]   
+        ],
+        "attachments": [
+            {
+                "sourceFile": "s1",
+                "name": "source_file.pdf"
+            }
+        ]
     }
     ],
     "sourceFiles": [

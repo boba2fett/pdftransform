@@ -40,7 +40,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
                 })
             })
         }).collect();
-        let attachments: Vec<_> = document.attachments().iter().map(|(attachment)| -> Result<_, &'static str> {
+        let attachments: Vec<_> = document.attachments().iter().map(|attachment| -> Result<_, &'static str> {
             let name = attachment.name();
             let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
             

@@ -87,6 +87,10 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                             add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         }
                     }
+                    for attachment in &document.attachments {
+                        let source_file = source_files.iter().find(|source_file| source_file.id.eq(&attachment.source_file)).ok_or("Could not find corresponding source file.")?;
+                        new_doc.attachments_mut().create_attachment_from_file(&attachment.name, &source_file.path).map_err(|_| "Could not add attachment.")?;
+                    }
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {

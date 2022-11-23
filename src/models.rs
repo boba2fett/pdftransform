@@ -125,6 +125,13 @@ pub struct Part {
     pub rotation: Option<Rotation>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Attachment {
+    pub source_file: String,
+    pub name: String,
+}
+
 #[derive(Copy, Clone, Debug, Serialize_repr, Deserialize_repr)]
 #[repr(i32)]
 pub enum Rotation {
@@ -149,6 +156,7 @@ impl Rotation {
 pub struct Document {
     pub id: String,
     pub binaries: Vec<Part>,
+    pub attachments: Vec<Attachment>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
