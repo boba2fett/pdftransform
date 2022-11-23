@@ -2,6 +2,7 @@ use bson::oid::ObjectId;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 use mongodb::bson::DateTime;
+use crate::serialize::base64;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +23,19 @@ pub struct RootLinks<'a> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewResult {
+    pub page_count: usize,
     pub pages: Vec<PreviewPageResult>,
+    pub signatures: Vec<Signature>,
+    pub protected: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Signature {
+    pub signing_date: Option<String>,
+    pub reason: Option<String>,
+    #[serde(with="base64")]
+    pub signature: Vec<u8>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

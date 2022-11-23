@@ -7,3 +7,4 @@ pub mod transform;
 pub mod files;
 pub mod routes;
 pub mod download;
+pub mod serialize;
