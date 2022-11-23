@@ -13,7 +13,7 @@
 
 - retry failed operations like file download or callback
 - further design desicions regarding running in cluster
-- providing page count or preview images
+- test preview exensivley
 - evaluate cancel of jobs
 
 ## Done
@@ -27,3 +27,4 @@
 - group logs for individual jobs (using differnt logger that allows setting attributes)
 - deleting old jobs (using expire_after with default 25h and for gridfs setting uploadDate on chunks collection)
 - cache open sourcefiles (if in order)
+- providing page count or preview images
