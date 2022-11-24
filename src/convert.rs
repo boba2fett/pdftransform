@@ -94,7 +94,7 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {
-                    let file_id = store_result_file(db_client, &document.id, &*bytes).await?;
+                    let file_id = store_result_file(db_client, &job_id, &document.id, &*bytes).await?;
 
                     Ok::<DocumentResult, &'static str>(DocumentResult {
                         download_url: convert_file_route(job_id, &file_id, job_token),

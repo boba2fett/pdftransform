@@ -34,7 +34,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             
             Ok(async move {
                 let file = fs::read(path).await.map_err(|_| "Could not read file.")?;
-                let file_id = store_result_file(&client, &page_number, &*file).await?;
+                let file_id = store_result_file(&client, &id, &page_number, &*file).await?;
                 Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                     download_url: preview_file_route(&id, &file_id, &token)
                 })
@@ -45,7 +45,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
             
             Ok(async move {
-                let file_id = store_result_file(&client, &name, &*bytes).await?;
+                let file_id = store_result_file(&client, &id, &name, &*bytes).await?;
                 Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                     name,
                     download_url: preview_file_route(&id, &file_id, &token)
