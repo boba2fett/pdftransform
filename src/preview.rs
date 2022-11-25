@@ -6,14 +6,17 @@ use mongodb::Client;
 use pdfium_render::{render_config::PdfRenderConfig, prelude::PdfDocument};
 use tokio::fs;
 
-use crate::{models::{PreviewResult, PreviewModel, PreviewPageResult, Signature, PreviewAttachmentResult}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::files::preview_file_route};
+use crate::{models::{PreviewResult, PreviewPageResult, PreviewAttachmentResult, PreviewJobModel, JobStatus, PreviewSignature}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::preview_file_route};
 
 pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult, &'static str> {
     let token = generate_30_alphanumeric();
-    let saved_job = save_new_preview(&client, PreviewModel {
+    let saved_job = save_new_preview(&client, PreviewJobModel {
         id: None,
         token: token.clone(),
-        created: DateTime::now()
+        created: DateTime::now(),
+        status: JobStatus::InProgress,
+        message: None,
+        callback_uri: None,
     }).await?;
     let id = saved_job.id.unwrap().to_string();
     let id = &id;
@@ -86,8 +89,8 @@ fn is_protected(document: &PdfDocument) -> Result<bool, &'static str> {
     Ok(protected)
 }
 
-fn signatures(document: &PdfDocument) -> Vec<Signature> {
-    document.signatures().iter().map(|signature| Signature {
+fn signatures(document: &PdfDocument) -> Vec<PreviewSignature> {
+    document.signatures().iter().map(|signature| PreviewSignature {
         signing_date: signature.signing_date(),
         reason: signature.reason(),
         signature: signature.bytes(),

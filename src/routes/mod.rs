@@ -1,4 +1,11 @@
-pub mod files;
-pub mod preview;
-pub mod root;
-pub mod transform;
+mod files;
+pub use files::*;
+
+mod preview;
+pub use preview::*;
+
+mod root;
+pub use root::*;
+
+mod transform;
+pub use transform::*;

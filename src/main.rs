@@ -2,19 +2,19 @@ use std::env;
 use pdftransform::consts::PARALLELISM;
 use pdftransform::persistence::{DbClient, self};
 use pdftransform::files;
-use pdftransform::routes::{root::root, transform::{job, create_job,}, files::convert_file, preview::preview, files::preview_file};
+use pdftransform::routes::{root_links, job, create_job, convert_file, preview_sync, preview_file};
 use rocket::{launch, routes};
 use rocket_db_pools::Database;
 
 #[launch]
 async fn rocket() -> _ {
+    json_env_logger2::init();
     setup_expire_time().await;
     setup_parallelism();
 
-    json_env_logger2::init();
     rocket::build()
         .attach(DbClient::init())
-        .mount("/", routes![root, job, create_job, convert_file, preview, preview_file])
+        .mount("/", routes![root_links, job, create_job, convert_file, preview_sync, preview_file])
 }
 
 async fn setup_expire_time() {

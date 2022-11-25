@@ -1,9 +1,9 @@
 use kv_log_macro::info;
 use pdfium_render::prelude::PdfDocument;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{DocumentResult, Document, JobDto, JobModel}, transform::{add_part, init_pdfium}, files::{store_result_file, TempJobFileProvider}, download::{download_source_files, DownloadedSourceFile}, routes::files::convert_file_route};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{Document, TransformJobModel, TransformDocumentResult, TransformJobDto}, transform::{add_part, init_pdfium}, files::{store_result_file, TempJobFileProvider}, download::{download_source_files, DownloadedSourceFile}, routes::convert_file_route};
 
-pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model: Option<JobModel>) {
+pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model: Option<TransformJobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
     let job_model = job_model.ok_or(_get_job_model(db_client, &job_id).await);
     if let Ok(job_model) = job_model {
@@ -31,7 +31,7 @@ pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model:
     }
 }
 
-async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<DocumentResult>) {
+async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, results: Vec<TransformDocumentResult>) {
     info!("Finished job '{}'", &job_id, {jobId: job_id});
     let result = set_ready(db_client, job_id, results).await;
     if let Err(err) = result {
@@ -41,7 +41,7 @@ async fn ready(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
-            let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
+            let result = client.post(callback_uri).json::<TransformJobDto>(&dto).send().await;
             if let Err(err) = result {
                 info!("Error sending callback '{}' to '{}', because of {}", &job_id, callback_uri, err);
             }
@@ -58,7 +58,7 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
     if let Some(callback_uri) = callback_uri {
         let dto = _get_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
-            let result = client.post(callback_uri).json::<JobDto>(&dto).send().await;
+            let result = client.post(callback_uri).json::<TransformJobDto>(&dto).send().await;
             if let Err(err) = result {
                 info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err, {jobId: job_id});
             }
@@ -66,7 +66,7 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
     }
 }
 
-async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<DocumentResult>, &'static str> {
+async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<TransformDocumentResult>, &'static str> {
     {
         let results: Vec<_> = {
             let pdfium = init_pdfium();
@@ -96,7 +96,7 @@ async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str,
                 Ok(async move {
                     let file_id = store_result_file(db_client, &job_id, &document.id, &*bytes).await?;
 
-                    Ok::<DocumentResult, &'static str>(DocumentResult {
+                    Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
                         download_url: convert_file_route(job_id, &file_id, job_token),
                         id: document.id.to_string(),
                     })

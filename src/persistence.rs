@@ -4,7 +4,7 @@ use mongodb::{Client, Collection, bson::DateTime, options::{ClientOptions, Index
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks, PreviewModel}, routes::transform::job_route};
+use crate::{consts::NAME, models::{JobStatus, TransformJobModel, PreviewJobModel, JobLinks, TransformJobDto, CreateTransformJobDto, TransformDocumentResult}, routes::job_route};
 
 #[derive(Database)]
 #[database("db")]
@@ -28,39 +28,39 @@ pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, E
     Ok(client)
 }
 
-fn get_jobs(db_client: &mongodb::Client) -> Collection<JobModel> {
+fn get_jobs(db_client: &mongodb::Client) -> Collection<TransformJobModel> {
     db_client.database(NAME).collection("jobs")
 }
 
-fn get_previews(db_client: &mongodb::Client) -> Collection<PreviewModel> {
+fn get_previews(db_client: &mongodb::Client) -> Collection<PreviewJobModel> {
     db_client.database(NAME).collection("previews")
 }
 
-pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: String) -> Result<JobDto, &'static str> {
+pub async fn get_job_dto(client: &mongodb::Client, job_id: &String, token: String) -> Result<TransformJobDto, &'static str> {
     let job_model = get_job_model(client, &job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
-    Ok(JobDto {
+    Ok(TransformJobDto {
         message: job_model.message,
         status: job_model.status,
-        results: job_model.results,
-        _links: ConvertLinks { _self: job_route(&job_id, &job_model.token) },
+        result: job_model.results,
+        _links: JobLinks { _self: job_route(&job_id, &job_model.token) },
         id: job_id,
     })
 }
 
-pub async fn _get_job_dto(client: &mongodb::Client, job_id: &str) -> Result<JobDto, &'static str> {
+pub async fn _get_job_dto(client: &mongodb::Client, job_id: &str) -> Result<TransformJobDto, &'static str> {
     let job_model = _get_job_model(client, &job_id).await?;
     let job_id = job_model.id.unwrap().to_string();
-    Ok(JobDto {
+    Ok(TransformJobDto {
         message: job_model.message,
         status: job_model.status,
-        results: job_model.results,
-        _links: ConvertLinks { _self: job_route(&job_id, &job_model.token) },
+        result: job_model.results,
+        _links: JobLinks { _self: job_route(&job_id, &job_model.token) },
         id: job_id,
     })
 }
 
-pub async fn get_preview_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<PreviewModel, &'static str> {
+pub async fn get_preview_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<PreviewJobModel, &'static str> {
     let previews = get_previews(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = previews.find_one(Some(doc!{"_id": id, "token": token}), None).await {
@@ -72,14 +72,14 @@ pub async fn get_preview_model(client: &mongodb::Client, job_id: &str, token: &s
     Err("Could not find job")
 }
 
-pub async fn save_new_preview(client: &mongodb::Client, preview: PreviewModel) -> Result<PreviewModel, &'static str> {
+pub async fn save_new_preview(client: &mongodb::Client, preview: PreviewJobModel) -> Result<PreviewJobModel, &'static str> {
     let previews = get_previews(client);
     let preview_clone = preview.clone();
     if let Ok(insert_result) = previews.insert_one(preview, None).await {
         let id = insert_result
         .inserted_id
         .as_object_id().unwrap();
-        return Ok(PreviewModel {
+        return Ok(PreviewJobModel {
             id: Some(id),
             ..preview_clone
         })
@@ -87,7 +87,7 @@ pub async fn save_new_preview(client: &mongodb::Client, preview: PreviewModel) -
     Err("Could not save job")
 }
 
-pub async fn get_job_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<JobModel, &'static str> {
+pub async fn get_job_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<TransformJobModel, &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.find_one(Some(doc!{"_id": id, "token": token}), None).await {
@@ -99,7 +99,7 @@ pub async fn get_job_model(client: &mongodb::Client, job_id: &str, token: &str) 
     Err("Could not find job")
 }
 
-pub async fn _get_job_model(client: &mongodb::Client, job_id: &str) -> Result<JobModel, &'static str> {
+pub async fn _get_job_model(client: &mongodb::Client, job_id: &str) -> Result<TransformJobModel, &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.find_one(Some(doc!("_id": id)), None).await {
@@ -111,8 +111,8 @@ pub async fn _get_job_model(client: &mongodb::Client, job_id: &str) -> Result<Jo
     Err("Could not find job")
 }
 
-pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateJobDto) -> Result<(JobDto, JobModel), &'static str> {
-    let job = JobModel {
+pub async fn create_new_job<'a>(client: &mongodb::Client, create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
+    let job = TransformJobModel {
         id: None,
         status: JobStatus::InProgress,
         callback_uri :  create_job.callback_uri,
@@ -134,7 +134,7 @@ pub fn generate_30_alphanumeric() -> String {
         .collect()
 }
 
-pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<(JobDto, JobModel), &'static str> {
+pub async fn save_new_job(client: &mongodb::Client, job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
     let jobs = get_jobs(client);
     let job_clone = job.clone();
     if let Ok(insert_result) = jobs.insert_one(job, None).await {
@@ -142,13 +142,13 @@ pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<(Jo
         .inserted_id
         .as_object_id().unwrap();
         let job_id = id.to_string();
-        return Ok((JobDto {
+        return Ok((TransformJobDto {
             message: None,
             status: JobStatus::InProgress,
-            results: vec![],
-            _links: ConvertLinks { _self: job_route(&job_id, &job_clone.token) },
+            result: vec![],
+            _links: JobLinks { _self: job_route(&job_id, &job_clone.token) },
             id: job_id,
-        }, JobModel {
+        }, TransformJobModel {
             id: Some(id),
             ..job_clone
         }))
@@ -156,7 +156,7 @@ pub async fn save_new_job(client: &mongodb::Client, job: JobModel) -> Result<(Jo
     Err("Could not save job")
 }
 
-pub async fn set_ready(client: &mongodb::Client, job_id: &str, results: Vec<DocumentResult>) -> Result<(), &'static str> {
+pub async fn set_ready(client: &mongodb::Client, job_id: &str, results: Vec<TransformDocumentResult>) -> Result<(), &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"results": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None).await {
