@@ -5,6 +5,6 @@ pub mod convert;
 pub mod preview;
 pub mod transform;
 pub mod files;
-pub mod routes;
 pub mod download;
 pub mod serialize;
+pub mod routes;

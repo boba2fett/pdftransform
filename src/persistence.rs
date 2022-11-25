@@ -4,7 +4,7 @@ use mongodb::{Client, Collection, bson::DateTime, options::{ClientOptions, Index
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
 
-use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks, PreviewModel}, routes::job_route};
+use crate::{consts::NAME, models::{JobDto, CreateJobDto, JobModel, JobStatus, DocumentResult, ConvertLinks, PreviewModel}, routes::transform::job_route};
 
 #[derive(Database)]
 #[database("db")]
