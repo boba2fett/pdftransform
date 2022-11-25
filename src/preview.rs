@@ -6,7 +6,7 @@ use mongodb::Client;
 use pdfium_render::{render_config::PdfRenderConfig, prelude::PdfDocument};
 use tokio::fs;
 
-use crate::{models::{PreviewResult, PreviewPageResult, PreviewAttachmentResult, PreviewJobModel, JobStatus, PreviewSignature}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::preview_file_route};
+use crate::{models::{PreviewResult, PreviewPageResult, PreviewAttachmentResult, PreviewJobModel, JobStatus, PreviewSignature}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::file_route};
 
 pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult, &'static str> {
     let token = generate_30_alphanumeric();
@@ -37,9 +37,9 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             
             Ok(async move {
                 let file = fs::read(path).await.map_err(|_| "Could not read file.")?;
-                let file_id = store_result_file(&client, &id, &page_number, &*file).await?;
+                let file_id = store_result_file(&client, &id, &token,&page_number, &*file).await?;
                 Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
-                    download_url: preview_file_route(&id, &file_id, &token)
+                    download_url: file_route(&file_id, &token)
                 })
             })
         }).collect();
@@ -48,10 +48,10 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
             
             Ok(async move {
-                let file_id = store_result_file(&client, &id, &name, &*bytes).await?;
+                let file_id = store_result_file(&client, &id, &token, &name, &*bytes).await?;
                 Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                     name,
-                    download_url: preview_file_route(&id, &file_id, &token)
+                    download_url: file_route(&file_id, &token)
                 })
             })
         }).collect();

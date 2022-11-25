@@ -15,6 +15,7 @@
 - further design desicions regarding running in cluster
 - test preview exensivley
 - evaluate cancel of jobs
+- readd MimeTypes
 
 ## Done
 

@@ -7,7 +7,7 @@ use rocket::fs::FileName;
 use tokio::fs;
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
 
-use crate::{persistence::{get_job_model, generate_30_alphanumeric, get_preview_model}, consts::{self}};
+use crate::{persistence::{generate_30_alphanumeric}, consts::{self}};
 
 const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
@@ -17,41 +17,30 @@ fn get_bucket(client: &mongodb::Client) -> GridFSBucket {
     GridFSBucket::new(db, Some(GridFSBucketOptions::default()))
 }
 
-pub async fn get_job_result_file(client: &mongodb::Client, job_id: &str, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
-    _ = get_job_model(client, job_id, token).await?;
-    _get_result_file(client, job_id, file_id).await
-}
-
-pub async fn get_preview_result_file(client: &mongodb::Client, preview_id: &str, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
-    _ = get_preview_model(client, preview_id, token).await?;
-    _get_result_file(client, preview_id, file_id).await
-}
-
-async fn _get_result_file(client: &mongodb::Client, job_id: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
-    let id = validate(client, job_id, file_id).await?; 
+pub async fn get_result_file(client: &mongodb::Client, token: &str, file_id: &str) -> Result<impl Stream<Item = Vec<u8>>, &'static str> {
+    let id = validate(client, token, file_id).await?; 
     let bucket = get_bucket(client);
     let cursor = bucket.open_download_stream(id).await.map_err(|_| "Could not find file.")?;
     Ok(cursor)
 }
 
-async fn validate(client: &mongodb::Client, job_id: &str, file_id: &str) -> Result<ObjectId, &'static str> {
+async fn validate(client: &mongodb::Client, token: &str, file_id: &str) -> Result<ObjectId, &'static str> {
     if let Ok(id) = ObjectId::from_str(file_id) {
         let files = client.database(consts::NAME).collection::<Document>(FILES_COLLECTION);
-        let job_id = ObjectId::from_str(job_id).unwrap();
-        _ = files.find_one(Some(doc!{ "_id": id, "job": job_id}) , None).await
+        _ = files.find_one(Some(doc!{ "_id": id, "token": token}) , None).await
             .map_err(|_| "Could not find file.")?.ok_or("Could not find file.")?;
         return Ok(id);
     }
     Err("Could not find file.")
 }
 
-pub async fn store_result_file(client: &mongodb::Client, job_id: &str, file_name: &str, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
+pub async fn store_result_file(client: &mongodb::Client, job_id: &str, token: &str, file_name: &str, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
     let mut bucket = get_bucket(client);
     let file_id = bucket.upload_from_stream(file_name, source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
     let chunks = client.database(consts::NAME).collection::<()>(CHUNKS_COLLECTION);
     let chunks_result = chunks.update_many(doc!{ "files_id": ObjectId::from_str(&file_id).unwrap() }, doc!{"$set": {"uploadDate": DateTime::now()}} , None);
     let files = client.database(consts::NAME).collection::<()>(FILES_COLLECTION);
-    let file_result = files.update_one(doc!{ "_id": ObjectId::from_str(&file_id).unwrap() }, doc!{"$set": {"job": ObjectId::from_str(&job_id).unwrap()}} , None);
+    let file_result = files.update_one(doc!{ "_id": ObjectId::from_str(&file_id).unwrap() }, doc!{"$set": {"token": token}} , None);
     if file_result.await.is_err() {
         warn!("Could not set uploadDate for chunks of {}.", &file_id, {fileId: &file_id, jobId: &job_id});
     }
