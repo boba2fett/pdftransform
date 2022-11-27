@@ -1,8 +1,8 @@
-use rocket::{get, serde::json::Json};
+use rocket::{get, serde::json::Json, response::status::Conflict};
 
 use crate::{
     consts::{NAME, VERSION},
-    models::{RootDto, RootLinks},
+    models::{RootDto, RootLinks, AvgTimeModel}, persistence::{jobs_health, DbClient},
 };
 
 #[get("/")]
@@ -15,4 +15,12 @@ pub fn root_links<'a>() -> Json<RootDto<'a>> {
             preview: "/preview",
         },
     })
+}
+
+#[get("/health")]
+pub async fn health(client: &DbClient) -> Result<Json<Vec<AvgTimeModel>>, Conflict<&'static str>> {
+    match jobs_health(client).await {
+        Ok(health) => Ok(Json(health)),
+        Err(err) => Err(Conflict(Some(err))),
+    }
 }

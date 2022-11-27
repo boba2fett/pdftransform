@@ -1,4 +1,5 @@
-use bson::{doc, oid::ObjectId};
+use bson::{doc, oid::ObjectId, Bson};
+use futures::StreamExt;
 use mongodb::{
     bson::DateTime,
     error::Error,
@@ -12,7 +13,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::{
     consts::NAME,
-    models::{DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
+    models::{DummyModel, JobStatus, PreviewJobModel, TransformJobModel, AvgTimeModel},
 };
 
 #[derive(Database)]
@@ -87,4 +88,48 @@ pub fn generate_30_alphanumeric() -> String {
         .take(30)
         .map(char::from)
         .collect()
+}
+
+pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, &'static str> {
+    let cursor = get_jobs::<DummyModel>(client).aggregate([
+        doc! {
+            "$match": doc! {
+                "finished": doc! {
+                    "$ne": Bson::Null
+                }
+            }
+        },
+        doc! {
+            "$set": doc! {
+                "time": doc! {
+                    "$dateDiff": doc! {
+                        "startDate": "$created",
+                        "endDate": "$finished",
+                        "unit": "millisecond"
+                    }
+                }
+            }
+        },
+        doc! {
+            "$group": doc! {
+                "_id": "$status",
+                "avgTimeSeconds": doc! {
+                    "$avg": "$time"
+                }
+            }
+        },
+        doc! {
+            "$set": doc! {
+                "status": "$_id"
+            }
+        }
+    ], None).await.map_err(|_| "Could not get heath.")?.with_type::<AvgTimeModel>();
+
+    let documents: Vec<Result<AvgTimeModel, Error>> = cursor.collect().await;
+    let mut results = Vec::with_capacity(documents.len());
+    for document in documents {
+        let document = document.map_err(|_| "Could not get health.")?;
+        results.push(document);
+    }
+    Ok(results)
 }

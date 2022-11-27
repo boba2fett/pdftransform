@@ -1,5 +1,5 @@
 mod root;
-pub use root::{RootDto, RootLinks};
+pub use root::*;
 
 mod preview;
 pub use preview::*;

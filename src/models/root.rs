@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::JobStatus;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RootDto<'a> {
@@ -14,4 +16,11 @@ pub struct RootDto<'a> {
 pub struct RootLinks<'a> {
     pub transform: &'a str,
     pub preview: &'a str,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvgTimeModel {
+    status: JobStatus,
+    avg_time_seconds: f64,
 }
