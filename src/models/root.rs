@@ -12,6 +12,6 @@ pub struct RootDto<'a> {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RootLinks<'a> {
-    pub convert: &'a str,
+    pub transform: &'a str,
     pub preview: &'a str,
 }

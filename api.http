@@ -1,12 +1,17 @@
 @endpoint = http://localhost:8000
-@job = /convert/637fd793f0cd8c8476bae14f?token=qS4U4esuviy26ZLRCVACUEs22TqyWS
+@job = /transform/63839641cf8d4a443a6189b5?token=HTHb52Q9AArJ1pm4KpGnrccc3YJ4fj
 ###
 GET {{endpoint}}
 ###
-POST {{endpoint}}/convert
+POST {{endpoint}}/transform
 Content-Type: application/json
 
-< example.json
+< transform.json
+###
+POST {{endpoint}}/preview
+Content-Type: application/json
+
+< preview.json
 ###
 GET {{endpoint}}{{job}}
 ###

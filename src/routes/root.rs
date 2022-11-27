@@ -8,7 +8,7 @@ pub fn root_links<'a>() -> Json<RootDto<'a>> {
         version: VERSION,
         name: NAME,
         _links: RootLinks {
-            convert: "/convert",
+            transform: "/transform",
             preview: "/preview",
         }
     })

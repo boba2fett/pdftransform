@@ -3,6 +3,13 @@ use crate::serialize::base64;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CreatePreviewJobDto {
+    pub callback_uri: Option<String>,
+    pub source_uri: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct PreviewResult {
     pub page_count: usize,
     pub pages: Vec<PreviewPageResult>,
@@ -11,7 +18,7 @@ pub struct PreviewResult {
     pub protected: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewSignature {
     pub signing_date: Option<String>,
@@ -20,13 +27,13 @@ pub struct PreviewSignature {
     pub signature: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPageResult {
     pub download_url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewAttachmentResult {
     pub name: String,

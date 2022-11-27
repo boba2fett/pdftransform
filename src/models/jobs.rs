@@ -6,7 +6,7 @@ use mongodb::bson::DateTime;
 use super::{transform::{SourceFile, Document, TransformDocumentResult}, PreviewResult};
 
 pub type TransformJobDto = JobDto<Vec<TransformDocumentResult>>;
-pub type PreviewJobDto = JobDto<PreviewResult>;
+pub type PreviewJobDto = JobDto<Option<PreviewResult>>;
 
 #[derive(Debug, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
@@ -45,6 +45,7 @@ pub struct PreviewJobModel {
     pub message: Option<String>,
     pub callback_uri: Option<String>,
     pub source_uri: Option<String>,
+    pub result: Option<PreviewResult>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -59,5 +60,5 @@ pub struct TransformJobModel {
     pub callback_uri: Option<String>,
     pub source_files: Vec<SourceFile>,
     pub documents: Vec<Document>,
-    pub results: Vec<TransformDocumentResult>,
+    pub result: Vec<TransformDocumentResult>,
 }

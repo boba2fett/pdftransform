@@ -1,11 +1,11 @@
 use kv_log_macro::info;
 use serde::Serialize;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{TransformJobModel, TransformJobDto, PreviewJobModel}, transform::get_transformation, files::TempJobFileProvider, download::{download_source_files, download_source, DownloadedSourceFile}, preview::get_preview};
+use crate::{persistence::{set_ready, set_error, _get_transform_job_model, _get_transform_job_dto}, models::{TransformJobModel, TransformJobDto, PreviewJobModel}, transform::get_transformation, files::TempJobFileProvider, download::{download_source_files, download_source, DownloadedSourceFile}, preview::get_preview};
 
 pub async fn process_transform_job(db_client: &mongodb::Client, job_id: String, job_model: Option<TransformJobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
-    let job_model = job_model.ok_or(_get_job_model(db_client, &job_id).await);
+    let job_model = job_model.ok_or(_get_transform_job_model(db_client, &job_id).await);
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;
@@ -33,7 +33,7 @@ pub async fn process_transform_job(db_client: &mongodb::Client, job_id: String, 
 
 pub async fn process_preview_job(db_client: &mongodb::Client, job_id: String, job_model: Option<PreviewJobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
-    let job_model = job_model.ok_or(_get_job_model(db_client, &job_id).await);
+    let job_model = job_model.ok_or(_get_transform_job_model(db_client, &job_id).await);
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;
@@ -64,7 +64,7 @@ async fn ready<ResultType: Serialize>(db_client: &mongodb::Client, job_id: &str,
         return;
     }
     if let Some(callback_uri) = callback_uri {
-        let dto = _get_job_dto(db_client, &job_id).await;
+        let dto = _get_transform_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<TransformJobDto>(&dto).send().await;
             if let Err(err) = result {
@@ -81,7 +81,7 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
         return;
     }
     if let Some(callback_uri) = callback_uri {
-        let dto = _get_job_dto(db_client, &job_id).await;
+        let dto = _get_transform_job_dto(db_client, &job_id).await;
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<TransformJobDto>(&dto).send().await;
             if let Err(err) = result {

@@ -4,14 +4,15 @@
     {   "id": "d1",
         "parts": [
             { 
+                "sourceFile": "s0"
+            },
+            { 
                 "sourceFile": "s1",
-                "startPageNumber": 1,
                 "endPageNumber": 2
             },
             { 
                 "sourceFile": "s1",
-                "startPageNumber": 3,
-                "endPageNumber": 4
+                "startPageNumber": 82
             },
             { 
                 "sourceFile": "s1",
@@ -20,9 +21,7 @@
                 "rotation": 180
             },
             { 
-                "sourceFile": "s1",
-                "startPageNumber": 7,
-                "endPageNumber": 8,
+                "sourceFile": "s0",
                 "rotation": -270
             }
         ],
@@ -35,6 +34,10 @@
     }
     ],
     "sourceFiles": [
+    {
+        "id": "s0",
+        "uri": "https://tcpdf.org/files/examples/example_041.pdf"
+    },
     {
         "id": "s1",
         "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
