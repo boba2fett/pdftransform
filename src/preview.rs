@@ -21,7 +21,7 @@ pub async fn get_preview(client: &Client, job_id: &str, token: &str, source_file
             
             Ok(async move {
                 let file = fs::read(path).await.map_err(|_| "Could not read file.")?;
-                let file_id = store_result_file(&client, &job_id, &token,&page_number, &*file).await?;
+                let file_id = store_result_file(&client, &job_id, &token,&page_number, Some("image/jpeg"),&*file).await?;
                 Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                     download_url: file_route(&file_id, &token)
                 })
@@ -32,7 +32,7 @@ pub async fn get_preview(client: &Client, job_id: &str, token: &str, source_file
             let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
             
             Ok(async move {
-                let file_id = store_result_file(&client, &job_id, &token, &name, &*bytes).await?;
+                let file_id = store_result_file(&client, &job_id, &token, &name, None, &*bytes).await?;
                 Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                     name,
                     download_url: file_route(&file_id, &token)

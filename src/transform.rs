@@ -32,7 +32,7 @@ pub async fn get_transformation<'a>(db_client: &mongodb::Client, job_id: &str, t
                 new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
             };
             Ok(async move {
-                let file_id = store_result_file(db_client, &job_id, &token, &document.id, &*bytes).await?;
+                let file_id = store_result_file(db_client, &job_id, &token, &document.id, Some("application/pdf"),&*bytes).await?;
 
                 Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
                     download_url: file_route(&file_id, token),
