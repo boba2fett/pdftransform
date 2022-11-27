@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use crate::serialize::base64;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,7 +23,7 @@ pub struct PreviewResult {
 pub struct PreviewSignature {
     pub signing_date: Option<String>,
     pub reason: Option<String>,
-    #[serde(with="base64")]
+    #[serde(with = "base64")]
     pub signature: Vec<u8>,
 }
 

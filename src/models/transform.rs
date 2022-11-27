@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,8 +45,7 @@ pub enum Rotation {
 }
 
 impl Rotation {
-    pub fn as_degrees(&self) -> i32
-    {
+    pub fn as_degrees(&self) -> i32 {
         *self as i32
     }
 }

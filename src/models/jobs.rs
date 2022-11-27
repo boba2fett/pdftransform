@@ -1,12 +1,15 @@
 use std::{path::Path, str::FromStr};
 
 use bson::oid::ObjectId;
-use rocket::http::ContentType;
-use serde::{Serialize, Deserialize};
-use serde_repr::{Serialize_repr, Deserialize_repr};
 use mongodb::bson::DateTime;
+use rocket::http::ContentType;
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{transform::{SourceFile, Document, TransformDocumentResult}, PreviewResult};
+use super::{
+    transform::{Document, SourceFile, TransformDocumentResult},
+    PreviewResult,
+};
 
 pub type TransformJobDto = JobDto<Vec<TransformDocumentResult>>;
 pub type PreviewJobDto = JobDto<Option<PreviewResult>>;

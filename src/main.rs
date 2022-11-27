@@ -1,10 +1,10 @@
-use std::env;
 use pdftransform::consts::PARALLELISM;
-use pdftransform::persistence::{DbClient, self};
 use pdftransform::files;
+use pdftransform::persistence::{self, DbClient};
 use pdftransform::routes::*;
 use rocket::{launch, routes};
 use rocket_db_pools::Database;
+use std::env;
 
 #[launch]
 async fn rocket() -> _ {
@@ -12,22 +12,37 @@ async fn rocket() -> _ {
     setup_expire_time().await;
     setup_parallelism();
 
-    rocket::build()
-        .attach(DbClient::init())
-        .mount("/", routes![root_links, file, preview_sync, preview_job, create_preview_job, transform_job, create_transform_job])
+    rocket::build().attach(DbClient::init()).mount(
+        "/",
+        routes![
+            root_links,
+            file,
+            preview_sync,
+            preview_job,
+            create_preview_job,
+            transform_job,
+            create_transform_job
+        ],
+    )
 }
 
 async fn setup_expire_time() {
-    let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    env::set_var("ROCKET_DATABASES", format!("{{db={{url=\"{mongo_uri}\"}}}}"));
+    let mongo_uri =
+        env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+    env::set_var(
+        "ROCKET_DATABASES",
+        format!("{{db={{url=\"{mongo_uri}\"}}}}"),
+    );
 
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 
     let expire = match expire {
         Ok(Ok(expire)) if expire > 0 => expire,
-        _ => 60*60*25,
+        _ => 60 * 60 * 25,
     };
-    let client = persistence::set_expire_after(&mongo_uri, expire).await.unwrap();
+    let client = persistence::set_expire_after(&mongo_uri, expire)
+        .await
+        .unwrap();
 
     files::set_expire_after(&client, expire).await.unwrap();
 }

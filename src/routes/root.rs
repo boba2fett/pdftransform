@@ -1,6 +1,9 @@
 use rocket::{get, serde::json::Json};
 
-use crate::{consts::{VERSION, NAME}, models::{RootLinks, RootDto}};
+use crate::{
+    consts::{NAME, VERSION},
+    models::{RootDto, RootLinks},
+};
 
 #[get("/")]
 pub fn root_links<'a>() -> Json<RootDto<'a>> {
@@ -10,6 +13,6 @@ pub fn root_links<'a>() -> Json<RootDto<'a>> {
         _links: RootLinks {
             transform: "/transform",
             preview: "/preview",
-        }
+        },
     })
 }
