@@ -1,32 +1,15 @@
 use std::path::PathBuf;
-
-use bson::DateTime;
 use image::ImageFormat;
 use mongodb::Client;
 use pdfium_render::{render_config::PdfRenderConfig, prelude::PdfDocument};
 use tokio::fs;
 
-use crate::{models::{PreviewResult, PreviewPageResult, PreviewAttachmentResult, PreviewJobModel, JobStatus, PreviewSignature}, transform::init_pdfium, persistence::{generate_30_alphanumeric, save_new_preview}, files::{TempJobFileProvider, store_result_file}, routes::file_route};
+use crate::{models::{PreviewResult, PreviewPageResult, PreviewAttachmentResult, PreviewSignature}, transform::init_pdfium, files::{TempJobFileProvider, store_result_file}, routes::file_route};
 
-pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult, &'static str> {
-    let token = generate_30_alphanumeric();
-    let saved_job = save_new_preview(&client, PreviewJobModel {
-        id: None,
-        token: token.clone(),
-        created: DateTime::now(),
-        status: JobStatus::InProgress,
-        message: None,
-        callback_uri: None,
-        source_uri: None,
-    }).await?;
-    let id = saved_job.id.unwrap().to_string();
-    let id = &id;
-    let token = &token;
-
-    let file_provider = TempJobFileProvider::build(&id).await;
+pub async fn get_preview(client: &Client, job_id: &str, token: &str, source_file: &PathBuf, file_provider: &TempJobFileProvider) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = init_pdfium();
-        let document = pdfium.load_pdf_from_file(&file, None).map_err(|_| "Could not open document.")?;
+        let document = pdfium.load_pdf_from_file(&source_file, None).map_err(|_| "Could not open document.")?;
 
         let render_config = PdfRenderConfig::new();
         let pages = document.pages().iter().enumerate().map(|(index, page)| -> Result<_, &'static str> {
@@ -38,7 +21,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             
             Ok(async move {
                 let file = fs::read(path).await.map_err(|_| "Could not read file.")?;
-                let file_id = store_result_file(&client, &id, &token,&page_number, &*file).await?;
+                let file_id = store_result_file(&client, &job_id, &token,&page_number, &*file).await?;
                 Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                     download_url: file_route(&file_id, &token)
                 })
@@ -49,7 +32,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
             let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
             
             Ok(async move {
-                let file_id = store_result_file(&client, &id, &token, &name, &*bytes).await?;
+                let file_id = store_result_file(&client, &job_id, &token, &name, &*bytes).await?;
                 Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                     name,
                     download_url: file_route(&file_id, &token)
@@ -68,8 +51,6 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
         let value = result?.await?;
         preview_attachment_results.push(value);
     }
-    file_provider.clean_up().await;
-    _ = fs::remove_file(&file).await;
     Ok(PreviewResult {
         page_count: preview_page_results.len(),
         pages: preview_page_results,

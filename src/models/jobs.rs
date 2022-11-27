@@ -18,11 +18,11 @@ pub enum JobStatus {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct JobDto<Result> {
+pub struct JobDto<ResultType> {
     pub id: String,
     pub status: JobStatus,
     pub message: Option<String>,
-    pub result: Result,
+    pub result: ResultType,
     #[serde(rename = "_links")]
     pub _links: JobLinks,
 }

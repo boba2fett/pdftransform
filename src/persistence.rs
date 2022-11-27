@@ -3,8 +3,9 @@ use bson::{doc, oid::ObjectId};
 use mongodb::{Client, Collection, bson::DateTime, options::{ClientOptions, IndexOptions}, IndexModel, error::Error};
 use rand::{thread_rng, Rng, distributions::Alphanumeric};
 use rocket_db_pools::Database;
+use serde::Serialize;
 
-use crate::{consts::NAME, models::{JobStatus, TransformJobModel, PreviewJobModel, JobLinks, TransformJobDto, CreateTransformJobDto, TransformDocumentResult}, routes::job_route};
+use crate::{consts::NAME, models::{JobStatus, TransformJobModel, PreviewJobModel, JobLinks, TransformJobDto, CreateTransformJobDto}, routes::job_route};
 
 #[derive(Database)]
 #[database("db")]
@@ -156,10 +157,10 @@ pub async fn save_new_job(client: &mongodb::Client, job: TransformJobModel) -> R
     Err("Could not save job")
 }
 
-pub async fn set_ready(client: &mongodb::Client, job_id: &str, results: Vec<TransformDocumentResult>) -> Result<(), &'static str> {
+pub async fn set_ready<ResultType: Serialize>(client: &mongodb::Client, job_id: &str, results: ResultType) -> Result<(), &'static str> {
     let jobs = get_jobs(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
-        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"results": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None).await {
+        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"result": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None).await {
             if result.modified_count > 0 {
                 return Ok(())
             }

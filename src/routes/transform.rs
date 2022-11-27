@@ -1,6 +1,6 @@
 use rocket::{get, serde::json::Json, response::status::{NotFound, Conflict}, post};
 
-use crate::{persistence::{get_job_dto, DbClient, create_new_job}, convert::process_job, models::{CreateTransformJobDto, TransformJobDto}};
+use crate::{persistence::{get_job_dto, DbClient, create_new_job}, convert::process_transform_job, models::{CreateTransformJobDto, TransformJobDto}};
 
 #[get("/convert/<job_id>?<token>")]
 pub async fn job<'a>(job_id: String, token: String, client: &DbClient) -> Result<Json<TransformJobDto>, NotFound<&'static str>> {
@@ -21,7 +21,7 @@ pub async fn create_job(db_client: &DbClient, create_job: Json<CreateTransformJo
             let job_id = job_dto.id.clone();
             let db_client_ref = db_client.0.clone();
             tokio::spawn(async move {
-                process_job(&db_client_ref, job_id, Some(job_model)).await
+                process_transform_job(&db_client_ref, job_id, Some(job_model)).await
             });
             Ok(Json(job_dto))
         },
