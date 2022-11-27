@@ -1,7 +1,7 @@
 # pdftransform
 
 - Using Pdfium to translate source documents into output documents
-- post content from example.json to /convert
+- look into api.http
 - to run in dev, get pdfium, start mongodb, provide MONGO_URI (defaults to "mongodb://localhost:27017")
 
 ## Runtime environment variables
@@ -15,7 +15,6 @@
 - further design desicions regarding running in cluster
 - test preview exensivley
 - evaluate cancel of jobs
-- readd MimeTypes
 
 ## Done
 
@@ -29,3 +28,4 @@
 - deleting old jobs (using expire_after with default 25h and for gridfs setting uploadDate on chunks collection)
 - cache open sourcefiles (if in order)
 - providing page count or preview images
+- readd MimeTypes
