@@ -1,7 +1,6 @@
 use kv_log_macro::info;
-use pdfium_render::prelude::PdfDocument;
 
-use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{Document, TransformJobModel, TransformDocumentResult, TransformJobDto}, transform::{add_part, init_pdfium}, files::{store_result_file, TempJobFileProvider}, download::{download_source_files, DownloadedSourceFile}, routes::file_route};
+use crate::{persistence::{set_ready, set_error, _get_job_model, _get_job_dto}, models::{TransformJobModel, TransformDocumentResult, TransformJobDto}, transform::process, files::TempJobFileProvider, download::{download_source_files, DownloadedSourceFile}};
 
 pub async fn process_job(db_client: &mongodb::Client, job_id: String, job_model: Option<TransformJobModel>) {
     info!("Starting job '{}'", &job_id, {jobId: job_id});
@@ -63,51 +62,5 @@ async fn error(db_client: &mongodb::Client, job_id: &str, callback_uri: &Option<
                 info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err, {jobId: job_id});
             }
         }
-    }
-}
-
-async fn process<'a>(db_client: &mongodb::Client, job_id: &str, job_token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>) -> Result<Vec<TransformDocumentResult>, &'static str> {
-    {
-        let results: Vec<_> = {
-            let pdfium = init_pdfium();
-            let mut cache: Option<(&str, PdfDocument)> = None;
-            
-            documents.iter().map(|document| -> Result<_, &'static str> {
-                let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
-                let bytes = {
-                    let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
-                    for part in &document.parts {
-                        if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
-                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
-                        }
-                        else {
-                            let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                            let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
-                            *cache_ref = Some((&part.source_file, source_doc));
-                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
-                        }
-                    }
-                    for attachment in &document.attachments {
-                        let source_file = source_files.iter().find(|source_file| source_file.id.eq(&attachment.source_file)).ok_or("Could not find corresponding source file.")?;
-                        new_doc.attachments_mut().create_attachment_from_file(&attachment.name, &source_file.path).map_err(|_| "Could not add attachment.")?;
-                    }
-                    new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
-                };
-                Ok(async move {
-                    let file_id = store_result_file(db_client, &job_id, &job_token, &document.id, &*bytes).await?;
-
-                    Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
-                        download_url: file_route(&file_id, job_token),
-                        id: document.id.to_string(),
-                    })
-                })
-            }).collect()
-        };
-        let mut document_results = Vec::with_capacity(documents.len());
-        for result in results {
-            let value = result?.await?;
-            document_results.push(value);
-        }
-        Ok(document_results)
     }
 }
