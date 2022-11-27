@@ -44,6 +44,7 @@ pub struct PreviewJobModel {
     pub status: JobStatus,
     pub message: Option<String>,
     pub callback_uri: Option<String>,
+    pub source_uri: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

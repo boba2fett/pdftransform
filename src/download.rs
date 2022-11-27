@@ -22,7 +22,7 @@ pub async fn download_source_files(client: &reqwest::Client, source_files: Vec<S
     }).buffer_unordered(parallelism).collect::<Vec<Result<DownloadedSourceFile, &'static str>>>().await
 }
 
-async fn dowload_source_file<'a>(client: &reqwest::Client, job_files: &TempJobFileProvider, source_file: SourceFile) -> Result<DownloadedSourceFile, &'static str> {
+pub async fn dowload_source_file<'a>(client: &reqwest::Client, job_files: &TempJobFileProvider, source_file: SourceFile) -> Result<DownloadedSourceFile, &'static str> {
     let path = job_files.get_path();
     let mut response = client.get(&source_file.uri).send().await.map_err(|_| "Could not load document.")?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;

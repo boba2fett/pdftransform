@@ -17,6 +17,7 @@ pub async fn get_preview(client: &Client, file: PathBuf) -> Result<PreviewResult
         status: JobStatus::InProgress,
         message: None,
         callback_uri: None,
+        source_uri: None,
     }).await?;
     let id = saved_job.id.unwrap().to_string();
     let id = &id;
