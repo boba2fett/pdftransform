@@ -102,24 +102,15 @@ pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, 
                                 "endDate": { "$ifNull": ["$finished", "$$NOW"]},
                                 "unit": "millisecond"
                             }
-                        },
-                        "isFinished": {
-                            "$ifNull": [
-                                {
-                                    "$toBool": "$finished"
-                                },
-                                false
-                            ]
                         }
                     }
                 },
                 doc! {
                     "$group": {
                         "_id": {
-                            "status": "$status",
-                            "finished": "$isFinished"
+                            "status": "$status"
                         },
-                        "avgTimeSeconds": {
+                        "avgTimeMillis": {
                             "$avg": "$time"
                         },
                         "count": {
@@ -129,8 +120,7 @@ pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, 
                 },
                 doc! {
                     "$set": {
-                        "status": "$_id.status",
-                        "finished": "$_id.finished"
+                        "status": "$_id.status"
                       }
                 },
             ],

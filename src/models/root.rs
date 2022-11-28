@@ -22,7 +22,6 @@ pub struct RootLinks<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct AvgTimeModel {
     status: JobStatus,
-    avg_time_seconds: f64,
-    finished: bool,
+    avg_time_millis: f64,
     count: usize,
 }
