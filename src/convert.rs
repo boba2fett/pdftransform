@@ -1,3 +1,4 @@
+use futures::Future;
 use kv_log_macro::info;
 use serde::Serialize;
 
@@ -5,7 +6,7 @@ use crate::{
     download::{download_source, download_source_files, DownloadedSourceFile},
     files::TempJobFileProvider,
     models::{PreviewJobModel, TransformJobDto, TransformJobModel},
-    persistence::{_get_transform_job_dto, _get_transform_job_model, set_error, set_ready},
+    persistence::{_get_transform_job_dto, _get_transform_job_model, set_error, set_ready, _get_preview_job_dto},
     preview::get_preview,
     transform::get_transformation,
 };
@@ -52,6 +53,7 @@ pub async fn process_transform_job(
                             &job_model.callback_uri,
                             &client,
                             results,
+                            |db_client, job_id| _get_transform_job_dto(db_client, job_id),
                         )
                         .await
                     }
@@ -104,7 +106,7 @@ pub async fn process_preview_job(
                 .await;
                 match result {
                     Ok(result) => {
-                        ready(db_client, &job_id, &job_model.callback_uri, &client, result).await
+                        ready(db_client, &job_id, &job_model.callback_uri, &client, result, |db_client, job_id| _get_preview_job_dto(db_client, job_id),).await
                     }
                     Err(err) => {
                         error(db_client, &job_id, &job_model.callback_uri, &client, err).await
@@ -119,13 +121,19 @@ pub async fn process_preview_job(
     }
 }
 
-async fn ready<ResultType: Serialize>(
-    db_client: &mongodb::Client,
-    job_id: &str,
+async fn ready<'a, 'b, ResultType: Serialize, JobType: Serialize + Sized, F, Fut>(
+    db_client: &'a mongodb::Client,
+    job_id: &'b str,
     callback_uri: &Option<String>,
     client: &reqwest::Client,
     result: ResultType,
-) {
+    job_fn: F
+)
+where
+    F: Send + 'static,
+    F: FnOnce(&'a mongodb::Client, &'b str) -> Fut,
+    Fut: Future<Output = Result<JobType, &'static str>> + Send
+{
     info!("Finished job '{}'", &job_id, { jobId: job_id });
     let result = set_ready(db_client, job_id, result).await;
     if let Err(err) = result {
@@ -133,11 +141,11 @@ async fn ready<ResultType: Serialize>(
         return;
     }
     if let Some(callback_uri) = callback_uri {
-        let dto = _get_transform_job_dto(db_client, &job_id).await;
+        let dto = job_fn(db_client, &job_id).await;
         if let Ok(dto) = dto {
             let result = client
                 .post(callback_uri)
-                .json::<TransformJobDto>(&dto)
+                .json::<JobType>(&dto)
                 .send()
                 .await;
             if let Err(err) = result {
