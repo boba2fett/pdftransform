@@ -23,4 +23,6 @@ pub struct RootLinks<'a> {
 pub struct AvgTimeModel {
     status: JobStatus,
     avg_time_seconds: f64,
+    finished: bool,
+    count: usize,
 }

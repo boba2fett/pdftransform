@@ -1,8 +1,9 @@
-use rocket::{get, serde::json::Json, response::status::Conflict};
+use rocket::{get, response::status::Conflict, serde::json::Json};
 
 use crate::{
     consts::{NAME, VERSION},
-    models::{RootDto, RootLinks, AvgTimeModel}, persistence::{jobs_health, DbClient},
+    models::{AvgTimeModel, RootDto, RootLinks},
+    persistence::{jobs_health, DbClient},
 };
 
 #[get("/")]

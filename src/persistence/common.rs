@@ -1,4 +1,4 @@
-use bson::{doc, oid::ObjectId, Bson};
+use bson::{doc, oid::ObjectId};
 use futures::StreamExt;
 use mongodb::{
     bson::DateTime,
@@ -13,7 +13,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::{
     consts::NAME,
-    models::{DummyModel, JobStatus, PreviewJobModel, TransformJobModel, AvgTimeModel},
+    models::{AvgTimeModel, DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
 };
 
 #[derive(Database)]
@@ -91,39 +91,54 @@ pub fn generate_30_alphanumeric() -> String {
 }
 
 pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, &'static str> {
-    let cursor = get_jobs::<DummyModel>(client).aggregate([
-        doc! {
-            "$match": doc! {
-                "finished": doc! {
-                    "$ne": Bson::Null
-                }
-            }
-        },
-        doc! {
-            "$set": doc! {
-                "time": doc! {
-                    "$dateDiff": doc! {
-                        "startDate": "$created",
-                        "endDate": "$finished",
-                        "unit": "millisecond"
+    let cursor = get_jobs::<DummyModel>(client)
+        .aggregate(
+            [
+                doc! {
+                    "$set": {
+                        "time": {
+                            "$dateDiff": {
+                                "startDate": "$created",
+                                "endDate": { "$ifNull": ["$finished", "$$NOW"]},
+                                "unit": "millisecond"
+                            }
+                        },
+                        "isFinished": {
+                            "$ifNull": [
+                                {
+                                    "$toBool": "$finished"
+                                },
+                                false
+                            ]
+                        }
                     }
-                }
-            }
-        },
-        doc! {
-            "$group": doc! {
-                "_id": "$status",
-                "avgTimeSeconds": doc! {
-                    "$avg": "$time"
-                }
-            }
-        },
-        doc! {
-            "$set": doc! {
-                "status": "$_id"
-            }
-        }
-    ], None).await.map_err(|_| "Could not get heath.")?.with_type::<AvgTimeModel>();
+                },
+                doc! {
+                    "$group": {
+                        "_id": {
+                            "status": "$status",
+                            "finished": "$isFinished"
+                        },
+                        "avgTimeSeconds": {
+                            "$avg": "$time"
+                        },
+                        "count": {
+                            "$count": {}
+                        }
+                    }
+                },
+                doc! {
+                    "$set": {
+                        "status": "$_id.status",
+                        "finished": "$_id.finished"
+                      }
+                },
+            ],
+            None,
+        )
+        .await
+        .map_err(|_| "Could not get heath.")?
+        .with_type::<AvgTimeModel>();
 
     let documents: Vec<Result<AvgTimeModel, Error>> = cursor.collect().await;
     let mut results = Vec::with_capacity(documents.len());
