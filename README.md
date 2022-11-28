@@ -29,3 +29,4 @@
 - cache open sourcefiles (if in order)
 - providing page count or preview images
 - readd MimeTypes
+- Added /health route

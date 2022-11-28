@@ -1,4 +1,5 @@
 use bson::{doc, oid::ObjectId};
+use futures::StreamExt;
 use mongodb::{
     bson::DateTime,
     error::Error,
@@ -12,7 +13,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::{
     consts::NAME,
-    models::{DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
+    models::{AvgTimeModel, DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
 };
 
 #[derive(Database)]
@@ -87,4 +88,53 @@ pub fn generate_30_alphanumeric() -> String {
         .take(30)
         .map(char::from)
         .collect()
+}
+
+pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, &'static str> {
+    let cursor = get_jobs::<DummyModel>(client)
+        .aggregate(
+            [
+                doc! {
+                    "$set": {
+                        "time": {
+                            "$dateDiff": {
+                                "startDate": "$created",
+                                "endDate": { "$ifNull": ["$finished", "$$NOW"]},
+                                "unit": "millisecond"
+                            }
+                        }
+                    }
+                },
+                doc! {
+                    "$group": {
+                        "_id": {
+                            "status": "$status"
+                        },
+                        "avgTimeMillis": {
+                            "$avg": "$time"
+                        },
+                        "count": {
+                            "$count": {}
+                        }
+                    }
+                },
+                doc! {
+                    "$set": {
+                        "status": "$_id.status"
+                      }
+                },
+            ],
+            None,
+        )
+        .await
+        .map_err(|_| "Could not get heath.")?
+        .with_type::<AvgTimeModel>();
+
+    let documents: Vec<Result<AvgTimeModel, Error>> = cursor.collect().await;
+    let mut results = Vec::with_capacity(documents.len());
+    for document in documents {
+        let document = document.map_err(|_| "Could not get health.")?;
+        results.push(document);
+    }
+    Ok(results)
 }

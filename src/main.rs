@@ -21,7 +21,8 @@ async fn rocket() -> _ {
             preview_job,
             create_preview_job,
             transform_job,
-            create_transform_job
+            create_transform_job,
+            health,
         ],
     )
 }

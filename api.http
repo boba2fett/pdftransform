@@ -3,6 +3,8 @@
 ###
 GET {{endpoint}}
 ###
+GET {{endpoint}}/health
+###
 POST {{endpoint}}/transform
 Content-Type: application/json
 
