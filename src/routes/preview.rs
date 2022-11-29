@@ -1,10 +1,10 @@
+use crate::consts::MAX_KIBIBYTES;
 use crate::convert::process_preview_job;
 use crate::models::{CreatePreviewJobDto, PreviewJobDto};
 use crate::persistence::{create_new_preview_job, generate_30_alphanumeric, get_preview_job_dto};
-use crate::{
-    files::TempJobFileProvider, models::PreviewResult, persistence::DbClient, preview::get_preview,
-};
-use rocket::fs::TempFile;
+use crate::{models::PreviewResult, persistence::DbClient, preview::get_preview};
+
+use rocket::data::{Data, ToByteUnit};
 use rocket::get;
 use rocket::response::status::NotFound;
 use rocket::{post, response::status::Conflict, serde::json::Json};
@@ -43,22 +43,21 @@ pub async fn create_preview_job(
     }
 }
 
-#[post("/preview", format = "pdf", data = "<file>")]
+#[post("/preview", format = "pdf", data = "<data>")]
 pub async fn preview_sync(
     db_client: &DbClient,
-    mut file: TempFile<'_>,
+    data: Data<'_>,
 ) -> Result<Json<PreviewResult>, Conflict<&'static str>> {
     let job_id = generate_30_alphanumeric();
     let token = generate_30_alphanumeric();
-    let file_provider = TempJobFileProvider::build(&job_id).await;
-    let path = file_provider.get_path();
-    file.persist_to(&path)
-        .await
-        .map_err(|_| Conflict(Some("Could not get provided file.")))?;
-    let result = get_preview(&db_client, &job_id, &token, &path, &file_provider)
+    let max = unsafe { MAX_KIBIBYTES };
+    let bytes = data.open(max.kibibytes()).into_bytes().await.map_err(|_| Conflict(Some("Could not get provided file.")))?;
+    if !bytes.is_complete() {
+        return Err(Conflict(Some("Inputfile to big.")))
+    }
+    let result = get_preview(&db_client, &job_id, &token, &bytes)
         .await
         .map(|r| Json(r))
         .map_err(|err| Conflict(Some(err)));
-    file_provider.clean_up().await;
     result
 }

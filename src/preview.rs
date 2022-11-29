@@ -1,11 +1,10 @@
 use image::ImageFormat;
 use mongodb::Client;
 use pdfium_render::{prelude::PdfDocument, render_config::PdfRenderConfig};
-use std::path::PathBuf;
-use tokio::fs;
+use std::io::Cursor;
 
 use crate::{
-    files::{store_result_file, TempJobFileProvider},
+    files::store_result_file,
     models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
     routes::file_route,
     transform::init_pdfium,
@@ -15,13 +14,12 @@ pub async fn get_preview(
     client: &Client,
     job_id: &str,
     token: &str,
-    source_file: &PathBuf,
-    file_provider: &TempJobFileProvider,
+    source_file: &[u8]
 ) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = init_pdfium();
         let document = pdfium
-            .load_pdf_from_file(&source_file, None)
+            .load_pdf_from_bytes(&source_file, None)
             .map_err(|_| "Could not open document.")?;
 
         let render_config = PdfRenderConfig::new();

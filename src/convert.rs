@@ -3,7 +3,7 @@ use kv_log_macro::info;
 use serde::Serialize;
 
 use crate::{
-    download::{download_source, download_source_files, DownloadedSourceFile},
+    download::{download_source_files, DownloadedSourceFile, download_source_bytes},
     files::TempJobFileProvider,
     models::{PreviewJobModel, TransformJobDto, TransformJobModel},
     persistence::{_get_transform_job_dto, _get_transform_job_model, set_error, set_ready, _get_preview_job_dto},
@@ -91,7 +91,7 @@ pub async fn process_preview_job(
             .unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;
         let source_file =
-            download_source(&client, &job_model.source_uri.unwrap(), &job_files).await;
+            download_source_bytes(&client, &job_model.source_uri.unwrap()).await;
         info!("Downloaded file for job '{}'", &job_id, { jobId: job_id });
 
         match source_file {
@@ -100,8 +100,7 @@ pub async fn process_preview_job(
                     db_client,
                     &job_id,
                     &job_model.token,
-                    &source_file,
-                    &job_files,
+                    &source_file
                 )
                 .await;
                 match result {

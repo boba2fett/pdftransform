@@ -62,3 +62,20 @@ pub async fn download_source(
     }
     Ok(path)
 }
+
+pub async fn download_source_bytes(
+    client: &reqwest::Client,
+    source_uri: &str
+) -> Result<rocket::http::hyper::body::Bytes, &'static str> {
+    let response = client
+        .get(source_uri)
+        .send()
+        .await
+        .map_err(|_| "Could not load document.")?;
+    match response.error_for_status() {
+        Ok(response) => {
+            response.bytes().await.map_err(|_| "Could not read source.")
+        },
+        Err(_) => Err("Could not read source."),
+    }
+}
