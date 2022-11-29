@@ -13,7 +13,7 @@ tokio = "1.22.0"
 chrono = "0.4.23"
 serde = "1.0.147"
 serde_repr = "0.1.9"
-reqwest = {version = "0.11.12", features = ["gzip", "deflate", "stream", "json"]}
+reqwest = {version = "0.11.13", features = ["gzip", "deflate", "stream", "json"]}
 futures = {version = "0.3.25"}
 rand = "0.8.5"
 pdfium-render = "0.7.25"

@@ -1,6 +1,10 @@
 target
 tmp
 .git
-example.json
+transform.json
+preview.json
 README.md
 libpdfium.so
+api.http
+.gitignore
+samples
