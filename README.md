@@ -11,11 +11,6 @@
 
 ## TODOs
 
-- retry failed operations like file download or callback
-- further design desicions regarding running in cluster
-- test preview exensivley
-- evaluate cancel of jobs
-
 ## Done
 
 - transform /tmp usage to database to allow running in cluster (done for result files)
@@ -30,3 +25,7 @@
 - providing page count or preview images
 - readd MimeTypes
 - Added /health route
+- evaluate cancel of jobs (time is to precious)
+- retry failed operations like file download or callback (wont't fix)
+- further design desicions regarding running in cluster (wont't fix)
+- test preview exensivley (wont't fix)
