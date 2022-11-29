@@ -30,25 +30,24 @@ pub async fn get_preview(
             .iter()
             .enumerate()
             .map(|(index, page)| -> Result<_, &'static str> {
-                let path = file_provider.get_path();
+                let mut bytes: Vec<u8> = Vec::new();
                 page.render_with_config(&render_config)
                     .map_err(|_| "Could not render to image.")?
                     .as_image()
                     .as_rgba8()
                     .ok_or("Could not render image.")?
-                    .save_with_format(&path, ImageFormat::Jpeg)
+                    .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Jpeg)
                     .map_err(|_| "Could not save image.")?;
                 let page_number = format!("{}", index + 1);
 
                 Ok(async move {
-                    let file = fs::read(path).await.map_err(|_| "Could not read file.")?;
                     let file_id = store_result_file(
                         &client,
                         &job_id,
                         &token,
                         &page_number,
                         Some("image/jpeg"),
-                        &*file,
+                        &*bytes,
                     )
                     .await?;
                     Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
