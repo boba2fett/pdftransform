@@ -1,46 +1,47 @@
 {
     "callbackUri": "https://en6nv5h9gx7s3.x.pipedream.net/",
     "documents": [
-    {   "id": "d1",
-        "parts": [
-            { 
-                "sourceFile": "s0"
-            },
-            { 
-                "sourceFile": "s1",
-                "endPageNumber": 2
-            },
-            { 
-                "sourceFile": "s1",
-                "startPageNumber": 82
-            },
-            { 
-                "sourceFile": "s1",
-                "startPageNumber": 5,
-                "endPageNumber": 6,
-                "rotation": 180
-            },
-            { 
-                "sourceFile": "s0",
-                "rotation": -270
-            }
-        ],
-        "attachments": [
-            {
-                "sourceFile": "s1",
-                "name": "source_file.pdf"
-            }
-        ]
-    }
+        {
+            "id": "d1",
+            "parts": [
+                {
+                    "sourceFile": "s0"
+                },
+                {
+                    "sourceFile": "s1",
+                    "endPageNumber": 2
+                },
+                {
+                    "sourceFile": "s1",
+                    "startPageNumber": 82
+                },
+                {
+                    "sourceFile": "s1",
+                    "startPageNumber": 5,
+                    "endPageNumber": 6,
+                    "rotation": 180
+                },
+                {
+                    "sourceFile": "s0",
+                    "rotation": -270
+                }
+            ],
+            "attachments": [
+                {
+                    "sourceFile": "s1",
+                    "name": "source_file.pdf"
+                }
+            ]
+        }
     ],
     "sourceFiles": [
-    {
-        "id": "s0",
-        "uri": "https://tcpdf.org/files/examples/example_041.pdf"
-    },
-    {
-        "id": "s1",
-        "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
-    }
-  ]
+        {
+            "id": "s0",
+            "uri": "https://tcpdf.org/files/examples/example_041.pdf"
+        },
+        {
+            "id": "s1",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        }
+    ]
 }

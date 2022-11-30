@@ -8,6 +8,7 @@
 
 - EXPIRE_AFTER_SECONDS=90000 25h expire time for jobs (always set the same with same mongodb as index of mongodb is not updated)
 - PARALLELISM=10 parallel downloads for source files
+- MAX_KIBIBYTES=4048 maximum for preview input files
 
 ## TODOs
 

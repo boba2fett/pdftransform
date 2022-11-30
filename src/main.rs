@@ -1,4 +1,4 @@
-use pdftransform::consts::PARALLELISM;
+use pdftransform::consts::{PARALLELISM, MAX_KIBIBYTES};
 use pdftransform::files;
 use pdftransform::persistence::{self, DbClient};
 use pdftransform::routes::*;
@@ -11,6 +11,7 @@ async fn rocket() -> _ {
     json_env_logger2::init();
     setup_expire_time().await;
     setup_parallelism();
+    setup_max_size();
 
     rocket::build().attach(DbClient::init()).mount(
         "/",
@@ -54,6 +55,16 @@ fn setup_parallelism() {
         PARALLELISM = match parallelism {
             Ok(Ok(parallelism)) if parallelism > 0 => parallelism,
             _ => PARALLELISM,
+        }
+    }
+}
+
+fn setup_max_size() {
+    let max_kibibytes = env::var("MAX_KIBIBYTES").map(|max| max.parse::<usize>());
+    unsafe {
+        MAX_KIBIBYTES = match max_kibibytes {
+            Ok(Ok(max)) if max > 0 => max,
+            _ => MAX_KIBIBYTES,
         }
     }
 }
