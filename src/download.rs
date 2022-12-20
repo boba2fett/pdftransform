@@ -7,6 +7,7 @@ use crate::{consts::PARALLELISM, files::TempJobFileProvider, models::SourceFile}
 pub struct DownloadedSourceFile {
     pub id: String,
     pub path: PathBuf,
+    pub image: bool,
 }
 
 pub async fn download_source_files(client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>> {
@@ -24,6 +25,7 @@ async fn download_source_file(client: &reqwest::Client, source_file: SourceFile,
     Ok(DownloadedSourceFile {
         id: source_file.id,
         path: download_source(client, &source_file.uri, job_files).await?,
+        image: source_file.image.unwrap_or(false)
     })
 }
 

@@ -28,9 +28,14 @@ pub async fn get_transformation<'a>(
                             add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         } else {
                             let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                            let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
-                            *cache_ref = Some((&part.source_file, source_doc));
-                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                            if source_file.image {
+                                add_image(&mut new_doc, &source_file, &part)?;
+                            }
+                            else {
+                                let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
+                                *cache_ref = Some((&part.source_file, source_doc));
+                                add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                            }
                         }
                     }
                     for attachment in &document.attachments {
@@ -73,6 +78,22 @@ pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, p
 
     turn_pages(new_start_page_number, new_end_page_number, new_document, part)?;
 
+    Ok(())
+}
+
+pub fn add_image(new_document: &mut PdfDocument, source_file: &DownloadedSourceFile, part: &Part) -> Result<(), &'static str> {
+    let source_img = image::io::Reader::open(&source_file.path).map_err(|_|"")?.with_guessed_format().map_err(|_|"")?.decode().map_err(|_|"")?;
+                                
+    let mut object = PdfPageImageObject::new_with_width(
+        &new_document,
+        &source_img,
+        PdfPoints::new(source_img.width() as f32),
+    ).map_err(|_|"")?;
+    if let Some(rotation) = &part.rotation {
+        object.rotate_clockwise_degrees(rotation.as_degrees() as f32).map_err(|_|"")?;
+    }
+    let mut page = new_document.pages().create_page_at_end(PdfPagePaperSize::Custom(PdfPoints::new(source_img.width() as f32), PdfPoints::new(source_img.height() as f32))).map_err(|_| "")?;
+    page.objects_mut().add_image_object(object).map_err(|_| "")?;
     Ok(())
 }
 
