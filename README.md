@@ -12,6 +12,8 @@
 
 ## TODOs
 
+- make images work with rotation
+
 ## Done
 
 - transform /tmp usage to database to allow running in cluster (done for result files)
