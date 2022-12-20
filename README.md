@@ -13,6 +13,7 @@
 ## TODOs
 
 - make images work with rotation
+- make preview faster by opting out of features
 
 ## Done
 
