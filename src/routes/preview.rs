@@ -43,6 +43,6 @@ pub async fn preview_sync(db_client: &DbClient, data: Data<'_>) -> Result<Json<P
     if !bytes.is_complete() {
         return Err(Conflict(Some("Inputfile to big.")));
     }
-    let result = get_preview(&db_client, &job_id, &token, &bytes).await.map(|r| Json(r)).map_err(|err| Conflict(Some(err)));
+    let result = get_preview(&db_client, &job_id, &token, bytes.value).await.map(|r| Json(r)).map_err(|err| Conflict(Some(err)));
     result
 }

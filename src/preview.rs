@@ -10,10 +10,10 @@ use crate::{
     transform::init_pdfium,
 };
 
-pub async fn get_preview(client: &Client, job_id: &str, token: &str, source_file: &[u8]) -> Result<PreviewResult, &'static str> {
+pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = init_pdfium();
-        let document = pdfium.load_pdf_from_bytes(&source_file, None).map_err(|_| "Could not open document.")?;
+        let document = pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
 
         let render_config = PdfRenderConfig::new();
         let pages = document

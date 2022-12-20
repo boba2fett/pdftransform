@@ -50,7 +50,7 @@ pub async fn process_preview_job(db_client: &mongodb::Client, job_id: String, jo
 
         match source_file {
             Ok(source_file) => {
-                let result: Result<_, &str> = get_preview(db_client, &job_id, &job_model.token, &source_file).await;
+                let result: Result<_, &str> = get_preview(db_client, &job_id, &job_model.token, source_file.to_vec()).await;
                 match result {
                     Ok(result) => ready(db_client, &job_id, &job_model.callback_uri, &client, result, |db_client, job_id| _get_preview_job_dto(db_client, job_id)).await,
                     Err(err) => error(db_client, &job_id, &job_model.callback_uri, &client, err).await,
