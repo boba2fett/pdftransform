@@ -10,17 +10,10 @@ use crate::{
     transform::init_pdfium,
 };
 
-pub async fn get_preview(
-    client: &Client,
-    job_id: &str,
-    token: &str,
-    source_file: &[u8]
-) -> Result<PreviewResult, &'static str> {
+pub async fn get_preview(client: &Client, job_id: &str, token: &str, source_file: &[u8]) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = init_pdfium();
-        let document = pdfium
-            .load_pdf_from_bytes(&source_file, None)
-            .map_err(|_| "Could not open document.")?;
+        let document = pdfium.load_pdf_from_bytes(&source_file, None).map_err(|_| "Could not open document.")?;
 
         let render_config = PdfRenderConfig::new();
         let pages = document
@@ -39,15 +32,7 @@ pub async fn get_preview(
                 let page_number = format!("{}", index + 1);
 
                 Ok(async move {
-                    let file_id = store_result_file(
-                        &client,
-                        &job_id,
-                        &token,
-                        &page_number,
-                        Some("image/jpeg"),
-                        &*bytes,
-                    )
-                    .await?;
+                    let file_id = store_result_file(&client, &job_id, &token, &page_number, Some("image/jpeg"), &*bytes).await?;
                     Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                         download_url: file_route(&file_id, &token),
                     })
@@ -59,13 +44,10 @@ pub async fn get_preview(
             .iter()
             .map(|attachment| -> Result<_, &'static str> {
                 let name = attachment.name();
-                let bytes = attachment
-                    .save_to_bytes()
-                    .map_err(|_| "Could not save attachment.")?;
+                let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
 
                 Ok(async move {
-                    let file_id =
-                        store_result_file(&client, &job_id, &token, &name, None, &*bytes).await?;
+                    let file_id = store_result_file(&client, &job_id, &token, &name, None, &*bytes).await?;
                     Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                         name,
                         download_url: file_route(&file_id, &token),
@@ -73,12 +55,7 @@ pub async fn get_preview(
                 })
             })
             .collect();
-        (
-            pages,
-            attachments,
-            signatures(&document),
-            is_protected(&document).unwrap_or(false),
-        )
+        (pages, attachments, signatures(&document), is_protected(&document).unwrap_or(false))
     };
     let mut preview_page_results = Vec::with_capacity(results.0.len());
     for result in results.0 {
@@ -101,24 +78,12 @@ pub async fn get_preview(
 
 fn is_protected(document: &PdfDocument) -> Result<bool, &'static str> {
     let permissions = document.permissions();
-    let protected = !permissions
-        .can_add_or_modify_text_annotations()
-        .map_err(|_| "Could not determine permissions.")?
-        || !permissions
-            .can_assemble_document()
-            .map_err(|_| "Could not determine permissions.")?
-        || !permissions
-            .can_create_new_interactive_form_fields()
-            .map_err(|_| "Could not determine permissions.")?
-        || !permissions
-            .can_extract_text_and_graphics()
-            .map_err(|_| "Could not determine permissions.")?
-        || !permissions
-            .can_fill_existing_interactive_form_fields()
-            .map_err(|_| "Could not determine permissions.")?
-        || !permissions
-            .can_modify_document_content()
-            .map_err(|_| "Could not determine permissions.")?;
+    let protected = !permissions.can_add_or_modify_text_annotations().map_err(|_| "Could not determine permissions.")?
+        || !permissions.can_assemble_document().map_err(|_| "Could not determine permissions.")?
+        || !permissions.can_create_new_interactive_form_fields().map_err(|_| "Could not determine permissions.")?
+        || !permissions.can_extract_text_and_graphics().map_err(|_| "Could not determine permissions.")?
+        || !permissions.can_fill_existing_interactive_form_fields().map_err(|_| "Could not determine permissions.")?
+        || !permissions.can_modify_document_content().map_err(|_| "Could not determine permissions.")?;
     Ok(protected)
 }
 

@@ -25,13 +25,8 @@ pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, E
     let client = Client::with_options(options)?;
     let jobs = get_jobs::<DummyModel>(&client);
 
-    let options = IndexOptions::builder()
-        .expire_after(Duration::new(seconds, 0))
-        .build();
-    let index = IndexModel::builder()
-        .keys(doc! {"created": 1})
-        .options(options)
-        .build();
+    let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
+    let index = IndexModel::builder().keys(doc! {"created": 1}).options(options).build();
 
     jobs.create_index(index.clone(), None).await?;
 
@@ -50,32 +45,27 @@ pub fn get_jobs<T>(db_client: &mongodb::Client) -> Collection<T> {
     db_client.database(NAME).collection("jobs")
 }
 
-pub async fn set_ready<ResultType: Serialize>(
-    client: &mongodb::Client,
-    job_id: &str,
-    results: ResultType,
-) -> Result<(), &'static str> {
+pub async fn set_ready<ResultType: Serialize>(client: &mongodb::Client, job_id: &str, results: ResultType) -> Result<(), &'static str> {
     let jobs = get_jobs::<DummyModel>(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
-        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Finished as u32 ,"result": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None).await {
+        if let Ok(result) = jobs
+            .update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Finished as u32 ,"result": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None)
+            .await
+        {
             if result.modified_count > 0 {
-                return Ok(())
+                return Ok(());
             }
         }
     }
     Err("Could not find job")
 }
 
-pub async fn set_error(
-    client: &mongodb::Client,
-    job_id: &str,
-    err: &str,
-) -> Result<(), &'static str> {
+pub async fn set_error(client: &mongodb::Client, job_id: &str, err: &str) -> Result<(), &'static str> {
     let jobs = get_jobs::<DummyModel>(client);
     if let Ok(id) = ObjectId::from_str(&job_id) {
-        if let Ok(result) = jobs.update_one(doc!{"_id": id}, doc!{"$set": {"status": JobStatus::Error as u32, "message": err, "finished": DateTime::now()}}, None).await {
+        if let Ok(result) = jobs.update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Error as u32, "message": err, "finished": DateTime::now()}}, None).await {
             if result.modified_count > 0 {
-                return Ok(())
+                return Ok(());
             }
         }
     }
@@ -83,11 +73,7 @@ pub async fn set_error(
 }
 
 pub fn generate_30_alphanumeric() -> String {
-    thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect()
+    thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect()
 }
 
 pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, &'static str> {

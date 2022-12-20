@@ -7,14 +7,8 @@ use rocket::{
 };
 
 #[get("/file/<file_id>?<token>")]
-pub async fn file(
-    db_client: &DbClient,
-    file_id: String,
-    token: String,
-) -> Result<(ContentType, ByteStream![Vec<u8>]), NotFound<String>> {
-    let file = get_result_file(&db_client.0, &token, &file_id)
-        .await
-        .map_err(|e| NotFound(e.to_string()))?;
+pub async fn file(db_client: &DbClient, file_id: String, token: String) -> Result<(ContentType, ByteStream![Vec<u8>]), NotFound<String>> {
+    let file = get_result_file(&db_client.0, &token, &file_id).await.map_err(|e| NotFound(e.to_string()))?;
     let content_type = file.0;
     let mut stream = file.1;
     Ok((
