@@ -83,15 +83,25 @@ pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, p
 
 pub fn add_image(new_document: &mut PdfDocument, source_file: &DownloadedSourceFile, part: &Part) -> Result<(), &'static str> {
     let source_img = image::io::Reader::open(&source_file.path).map_err(|_|"")?.with_guessed_format().map_err(|_|"")?.decode().map_err(|_|"")?;
-                                
-    let mut object = PdfPageImageObject::new_with_width(
+    
+    let source_img =  {
+        match &part.rotation {
+            Some(Rotation::N270) => source_img.rotate90(),
+            Some(Rotation::N180) => source_img.rotate180(),
+            Some(Rotation::N90) => source_img.rotate270(),
+            Some(Rotation::P90) => source_img.rotate90(),
+            Some(Rotation::P180) => source_img.rotate180(),
+            Some(Rotation::P270) => source_img.rotate270(),
+            _ => source_img
+        }
+    };
+
+    let object = PdfPageImageObject::new_with_width(
         &new_document,
         &source_img,
         PdfPoints::new(source_img.width() as f32),
     ).map_err(|_|"")?;
-    if let Some(rotation) = &part.rotation {
-        object.rotate_clockwise_degrees(rotation.as_degrees() as f32).map_err(|_|"")?;
-    }
+    
     let mut page = new_document.pages().create_page_at_end(PdfPagePaperSize::Custom(PdfPoints::new(source_img.width() as f32), PdfPoints::new(source_img.height() as f32))).map_err(|_| "")?;
     page.objects_mut().add_image_object(object).map_err(|_| "")?;
     Ok(())
