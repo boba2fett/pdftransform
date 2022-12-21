@@ -9,10 +9,10 @@ rocket_db_pools = {version = "0.1.0-rc.2", features = ["mongodb"]}
 mongodb = "2.3.1"
 mongodb-gridfs = "0.2.2"
 bson = { version = "2.4.0", features = ["chrono-0_4"] }
-tokio = "1.22.0"
+tokio = "1.23.0"
 chrono = "0.4.23"
-serde = "1.0.148"
-serde_repr = "0.1.9"
+serde = "1.0.151"
+serde_repr = "0.1.10"
 reqwest = {version = "0.11.13", features = ["gzip", "deflate", "stream", "json"]}
 futures = {version = "0.3.25"}
 rand = "0.8.5"
