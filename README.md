@@ -12,7 +12,7 @@
 
 ## TODOs
 
-- make images work with rotation
+- add autodetect for content-types
 - make preview faster by opting out of features
 
 ## Done
@@ -33,3 +33,4 @@
 - retry failed operations like file download or callback (wont't fix)
 - further design desicions regarding running in cluster (wont't fix)
 - test preview exensivley (wont't fix)
+- make images work with rotation
