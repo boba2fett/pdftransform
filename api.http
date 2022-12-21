@@ -1,5 +1,5 @@
 @endpoint = http://localhost:8000
-@job = /transform/63a366d63ec8f640b34bacab?token=6bdwVeFvdXmuyJl5ycW4XXoERkvqEq
+@job = /transform/63a36ed4b45e3b289d303cb7?token=uQ1bENJ9C9CnbepxGDkm1gwwz6Hk4M
 ###
 GET {{endpoint}}
 ###

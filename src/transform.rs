@@ -2,7 +2,7 @@ use crate::{
     download::DownloadedSourceFile,
     files::store_result_file,
     models::{Document, Part, Rotation, TransformDocumentResult},
-    routes::file_route,
+    routes::file_route, mime::is_supported_image,
 };
 use pdfium_render::prelude::*;
 
@@ -28,7 +28,7 @@ pub async fn get_transformation<'a>(
                             add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         } else {
                             let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                            if source_file.image {
+                            if is_supported_image(&source_file.content_type) {
                                 add_image(&mut new_doc, &source_file, &part)?;
                             }
                             else {

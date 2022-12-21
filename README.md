@@ -12,8 +12,10 @@
 
 ## TODOs
 
-- add autodetect for content-types
+- make images work better (startpage?, endpage?)
+- support tiffs
 - make preview faster by opting out of features
+- change pdfium to load once as Send and Sync are now implemented in 0.7.26
 
 ## Done
 
@@ -34,3 +36,4 @@
 - further design desicions regarding running in cluster (wont't fix)
 - test preview exensivley (wont't fix)
 - make images work with rotation
+- add autodetect for content-types

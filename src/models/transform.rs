@@ -14,7 +14,7 @@ pub struct CreateTransformJobDto {
 pub struct SourceFile {
     pub id: String,
     pub uri: String,
-    pub image: Option<bool>,
+    pub content_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
