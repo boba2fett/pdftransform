@@ -1,7 +1,8 @@
-use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM};
+use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM, PDFIUM};
 use pdftransform::files;
 use pdftransform::persistence::{self, DbClient};
 use pdftransform::routes::*;
+use pdftransform::transform::init_pdfium;
 use rocket::{launch, routes};
 use rocket_db_pools::Database;
 use std::env;
@@ -12,6 +13,7 @@ async fn rocket() -> _ {
     setup_expire_time().await;
     setup_parallelism();
     setup_max_size();
+    setup_pdfium();
 
     rocket::build()
         .attach(DbClient::init())
@@ -50,5 +52,12 @@ fn setup_max_size() {
             Ok(Ok(max)) if max > 0 => max,
             _ => MAX_KIBIBYTES,
         }
+    }
+}
+
+fn setup_pdfium() {
+    let pdfium = init_pdfium();
+    unsafe {
+        PDFIUM = Some(pdfium);
     }
 }

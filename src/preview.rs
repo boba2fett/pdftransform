@@ -7,12 +7,12 @@ use crate::{
     files::store_result_file,
     models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
     routes::file_route,
-    transform::init_pdfium,
+    consts::PDFIUM,
 };
 
 pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
-        let pdfium = init_pdfium();
+        let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
         let document = pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
 
         let render_config = PdfRenderConfig::new();

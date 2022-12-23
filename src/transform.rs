@@ -2,7 +2,7 @@ use crate::{
     download::DownloadedSourceFile,
     files::store_result_file,
     models::{Document, Part, Rotation, TransformDocumentResult},
-    routes::file_route, mime::is_supported_image,
+    routes::file_route, mime::is_supported_image, consts::PDFIUM,
 };
 use pdfium_render::prelude::*;
 
@@ -14,7 +14,7 @@ pub async fn get_transformation<'a>(
     db_client: &mongodb::Client, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>,
 ) -> Result<Vec<TransformDocumentResult>, &'static str> {
     let results: Vec<_> = {
-        let pdfium = init_pdfium();
+        let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
         let mut cache: Option<(&str, PdfDocument)> = None;
 
         documents
