@@ -31,6 +31,7 @@ pub struct PreviewSignature {
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPageResult {
     pub download_url: String,
+    pub text: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

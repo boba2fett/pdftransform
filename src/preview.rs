@@ -30,11 +30,13 @@ pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_
                     .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Jpeg)
                     .map_err(|_| "Could not save image.")?;
                 let page_number = format!("{}", index + 1);
+                let text = page.text().map_err(|_| "")?.all();
 
                 Ok(async move {
                     let file_id = store_result_file(&client, &job_id, &token, &page_number, Some("image/jpeg"), &*bytes).await?;
                     Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                         download_url: file_route(&file_id, &token),
+                        text,
                     })
                 })
             })
