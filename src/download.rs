@@ -1,5 +1,5 @@
+use actix_web::{web::Bytes, http::header::ContentType};
 use futures::StreamExt;
-use rocket::http::ContentType;
 use std::{path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 use reqwest::{header::CONTENT_TYPE, Response};
@@ -57,7 +57,7 @@ fn determine_content_type(response: &Response, force_content_type: &Option<Strin
     }
 }
 
-pub async fn download_source_bytes(client: &reqwest::Client, source_uri: &str) -> Result<rocket::http::hyper::body::Bytes, &'static str> {
+pub async fn download_source_bytes(client: &reqwest::Client, source_uri: &str) -> Result<Bytes, &'static str> {
     let response = client.get(source_uri).send().await.map_err(|_| "Could not load document.")?;
     match response.error_for_status() {
         Ok(response) => response.bytes().await.map_err(|_| "Could not read source."),

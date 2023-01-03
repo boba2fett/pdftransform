@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rocket = {version = "0.5.0-rc.2", features = ["json"]}
-rocket_db_pools = {version = "0.1.0-rc.2", features = ["mongodb"]}
+actix-web = "4.2.1"
 mongodb = "2.3.1"
 mongodb-gridfs = "0.2.2"
 bson = { version = "2.4.0", features = ["chrono-0_4"] }

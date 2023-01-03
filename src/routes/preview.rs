@@ -1,13 +1,10 @@
+use actix_web::{get, post};
+
 use crate::consts::MAX_KIBIBYTES;
 use crate::convert::process_preview_job;
 use crate::models::{CreatePreviewJobDto, PreviewJobDto};
 use crate::persistence::{create_new_preview_job, generate_30_alphanumeric, get_preview_job_dto};
-use crate::{models::PreviewResult, persistence::DbClient, preview::get_preview};
-
-use rocket::data::{Data, ToByteUnit};
-use rocket::get;
-use rocket::response::status::NotFound;
-use rocket::{post, response::status::Conflict, serde::json::Json};
+use crate::{models::PreviewResult, preview::get_preview};
 
 #[get("/preview/<job_id>?<token>")]
 pub async fn preview_job(job_id: String, token: String, client: &DbClient) -> Result<Json<PreviewJobDto>, NotFound<&'static str>> {

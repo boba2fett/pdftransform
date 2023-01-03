@@ -1,3 +1,7 @@
+pub struct Token {
+    token: String,
+}
+
 mod files;
 pub use files::*;
 

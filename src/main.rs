@@ -15,14 +15,21 @@ async fn rocket() -> _ {
     setup_max_size();
     setup_pdfium();
 
-    rocket::build()
-        .attach(DbClient::init())
-        .mount("/", routes![root_links, file, preview_sync, preview_job, create_preview_job, transform_job, create_transform_job, health,])
+    let db_data = Data::new(db);
+        HttpServer::new(move || {
+            App::new()
+                .app_data(db_data.clone())
+                .service(create_user)
+                //.mount("/", routes![root_links, file, preview_sync, preview_job, create_preview_job, transform_job, create_transform_job, health,])
+        })
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
+        
 }
 
 async fn setup_expire_time() {
     let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    env::set_var("ROCKET_DATABASES", format!("{{db={{url=\"{mongo_uri}\"}}}}"));
 
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 

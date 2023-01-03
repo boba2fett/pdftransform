@@ -7,7 +7,6 @@ use mongodb::{
     Client, Collection, IndexModel,
 };
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use rocket_db_pools::Database;
 use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
@@ -15,10 +14,6 @@ use crate::{
     consts::NAME,
     models::{AvgTimeModel, DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
 };
-
-#[derive(Database)]
-#[database("db")]
-pub struct DbClient(pub Client);
 
 pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, Error> {
     let options = ClientOptions::parse(&mongo_uri).await?;

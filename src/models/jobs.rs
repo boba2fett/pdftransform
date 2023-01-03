@@ -1,8 +1,8 @@
 use std::{path::Path, str::FromStr};
 
+use actix_web::http::header::ContentType;
 use bson::oid::ObjectId;
 use mongodb::bson::DateTime;
-use rocket::http::ContentType;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 

@@ -1,9 +1,9 @@
+use actix_web::http::header::ContentType;
 use bson::{doc, oid::ObjectId, DateTime};
 use futures::{AsyncRead, Stream};
 use kv_log_macro::warn;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
-use rocket::{fs::FileName, http::ContentType};
 use std::{env, path::PathBuf, str::FromStr, time::Duration};
 use tokio::fs;
 
@@ -73,8 +73,7 @@ pub struct TempJobFileProvider {
 
 impl TempJobFileProvider {
     pub async fn build(job_id: &str) -> TempJobFileProvider {
-        let file_name = FileName::new(job_id);
-        let dir = env::temp_dir().join(file_name.as_str().unwrap());
+        let dir = env::temp_dir().join(job_id);
         fs::create_dir_all(&dir).await.unwrap();
         TempJobFileProvider { job_directory: dir }
     }

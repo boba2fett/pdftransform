@@ -1,4 +1,4 @@
-use rocket::http::ContentType;
+use actix_web::http::header::ContentType;
 
 pub fn is_supported_image(content_type: &ContentType) -> bool {
     content_type.is_png()
