@@ -1,4 +1,4 @@
-use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM, PDFIUM};
+use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::files;
 use pdftransform::persistence::{self, DbClient};
 use pdftransform::routes::*;
@@ -30,6 +30,10 @@ async fn rocket() -> _ {
 
 async fn setup_expire_time() {
     let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+    let client = persistence::init_client(mongo_uri);
+    unsafe {
+        MONGO_CLIENT = Some(client)
+    }
 
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 
@@ -37,9 +41,9 @@ async fn setup_expire_time() {
         Ok(Ok(expire)) if expire > 0 => expire,
         _ => 60 * 60 * 25,
     };
-    let client = persistence::set_expire_after(&mongo_uri, expire).await.unwrap();
 
-    files::set_expire_after(&client, expire).await.unwrap();
+    persistence::set_expire_after(xpire).await.unwrap();
+    files::set_expire_after(expire).await.unwrap();
 }
 
 fn setup_parallelism() {
