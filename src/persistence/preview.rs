@@ -3,13 +3,12 @@ use mongodb::bson::DateTime;
 use std::str::FromStr;
 
 use crate::{
-    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel},
-    routes::preview_job_route,
+    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel}, routes::preview::preview_job_route,
 };
 
 use super::{generate_30_alphanumeric, get_previews};
 
-pub async fn get_preview_job_dto(job_id: &String, token: String) -> Result<PreviewJobDto, &'static str> {
+pub async fn get_preview_job_dto(job_id: &String, token: &str) -> Result<PreviewJobDto, &'static str> {
     let job_model = get_preview_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
     Ok(PreviewJobDto {

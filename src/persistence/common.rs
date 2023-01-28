@@ -20,8 +20,8 @@ pub async fn init_mongo(mongo_uri: &str) -> Result<mongodb::Client, Error> {
     Client::with_options(options)
 }
 
-pub fn get_mongo() -> mongodb::Client {
-    unsafe { MONGO_CLIENT.unwrap() }
+pub fn get_mongo() -> &'static mongodb::Client {
+    unsafe { MONGO_CLIENT.as_ref().unwrap() }
 }
 
 pub async fn set_expire_after(seconds: u64) -> Result<(), Error> {

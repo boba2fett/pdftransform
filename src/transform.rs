@@ -2,7 +2,7 @@ use crate::{
     download::DownloadedSourceFile,
     files::store_result_file,
     models::{Document, Part, Rotation, TransformDocumentResult},
-    routes::file_route, consts::PDFIUM,
+    consts::PDFIUM, routes::files::file_route,
 };
 use mime::Mime;
 use pdfium_render::prelude::*;

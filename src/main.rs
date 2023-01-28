@@ -1,36 +1,37 @@
+use axum::Router;
+use kv_log_macro::info;
 use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM, PDFIUM, MONGO_CLIENT};
-use pdftransform::files;
-use pdftransform::persistence::{self, DbClient};
-use pdftransform::routes::*;
+use pdftransform::{persistence, files};
+use pdftransform::routes;
 use pdftransform::transform::init_pdfium;
-use rocket::{launch, routes};
-use rocket_db_pools::Database;
 use std::env;
+use std::net::SocketAddr;
 
-#[launch]
-async fn rocket() -> _ {
+#[tokio::main]
+async fn main() {
     json_env_logger2::init();
     setup_expire_time().await;
     setup_parallelism();
     setup_max_size();
     setup_pdfium();
 
-    let db_data = Data::new(db);
-        HttpServer::new(move || {
-            App::new()
-                .app_data(db_data.clone())
-                .service(create_user)
-                //.mount("/", routes![root_links, file, preview_sync, preview_job, create_preview_job, transform_job, create_transform_job, health,])
-        })
-        .bind(("127.0.0.1", 8080))?
-        .run()
+    let app = Router::new()
+        .merge(routes::root::create_route())
+        .merge(routes::files::create_route())
+        .merge(routes::preview::create_route())
+        .merge(routes::transform::create_route());
+
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    info!("listening on {}", &addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
         .await
-        
+        .unwrap();
 }
 
 async fn setup_expire_time() {
     let mongo_uri = env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    let client = persistence::init_client(mongo_uri);
+    let client = persistence::init_mongo(&mongo_uri).await.unwrap();
     unsafe {
         MONGO_CLIENT = Some(client)
     }
@@ -42,7 +43,7 @@ async fn setup_expire_time() {
         _ => 60 * 60 * 25,
     };
 
-    persistence::set_expire_after(xpire).await.unwrap();
+    persistence::set_expire_after(expire).await.unwrap();
     files::set_expire_after(expire).await.unwrap();
 }
 

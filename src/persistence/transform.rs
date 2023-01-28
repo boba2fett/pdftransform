@@ -3,13 +3,12 @@ use mongodb::bson::DateTime;
 use std::str::FromStr;
 
 use crate::{
-    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel},
-    routes::transform_job_route,
+    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel}, routes::transform::transform_job_route,
 };
 
 use super::{generate_30_alphanumeric, get_transformations};
 
-pub async fn get_transform_job_dto(job_id: &String, token: String) -> Result<TransformJobDto, &'static str> {
+pub async fn get_transform_job_dto(job_id: &String, token: &str) -> Result<TransformJobDto, &'static str> {
     let job_model = get_transform_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
     Ok(TransformJobDto {

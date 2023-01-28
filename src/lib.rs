@@ -8,3 +8,4 @@ pub mod preview;
 pub mod routes;
 pub mod serialize;
 pub mod transform;
+pub mod stream;

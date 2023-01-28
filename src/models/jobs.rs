@@ -104,6 +104,7 @@ impl FileModel {
                     "jpg" => mime::IMAGE_JPEG,
                     "jpeg" => mime::IMAGE_JPEG,
                     "bmp" => mime::IMAGE_BMP,
+                    _ => mime::APPLICATION_OCTET_STREAM
                 }
             }
         }

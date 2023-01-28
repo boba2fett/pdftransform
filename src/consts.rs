@@ -1,7 +1,7 @@
 use pdfium_render::prelude::Pdfium;
 
-pub const VERSION: String = env!("CARGO_PKG_VERSION").to_string();
-pub const NAME: &str = env!("CARGO_PKG_NAME");
+pub static VERSION: &str = env!("CARGO_PKG_VERSION");
+pub static NAME: &str = env!("CARGO_PKG_NAME");
 pub static mut PARALLELISM: usize = 10;
 pub static mut MAX_KIBIBYTES: usize = 4096;
 pub static mut PDFIUM: Option<Pdfium> = None;

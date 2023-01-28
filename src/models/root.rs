@@ -5,8 +5,8 @@ use super::JobStatus;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RootDto {
-    pub version: String,
-    pub name: String,
+    pub version: &'static str,
+    pub name: &'static str,
     #[serde(rename = "_links")]
     pub _links: RootLinks,
 }
@@ -14,8 +14,8 @@ pub struct RootDto {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RootLinks {
-    pub transform: String,
-    pub preview: String,
+    pub transform: &'static str,
+    pub preview: &'static str,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

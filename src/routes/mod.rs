@@ -1,15 +1,7 @@
-pub struct Token {
-    token: String,
-}
+pub mod files;
 
-mod files;
-pub use files::*;
+pub mod preview;
 
-mod preview;
-pub use preview::*;
+pub mod root;
 
-mod root;
-pub use root::*;
-
-mod transform;
-pub use transform::*;
+pub mod transform;
