@@ -5,7 +5,7 @@ use pdftransform::{persistence, files};
 use pdftransform::routes;
 use pdftransform::transform::init_pdfium;
 use std::env;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 
 #[tokio::main]
 async fn main() {
@@ -21,7 +21,7 @@ async fn main() {
         .merge(routes::preview::create_route())
         .merge(routes::transform::create_route());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 8000);
     info!("listening on {}", &addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
