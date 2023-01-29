@@ -1,49 +1,52 @@
 use bson::{doc, oid::ObjectId, DateTime};
 use futures::{AsyncRead, Stream};
 use kv_log_macro::warn;
+use mime::Mime;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
-use rocket::{fs::FileName, http::ContentType};
 use std::{env, path::PathBuf, str::FromStr, time::Duration};
 use tokio::fs;
 
 use crate::{
     consts::{self},
     models::{DummyModel, FileModel},
-    persistence::generate_30_alphanumeric,
+    persistence::{generate_30_alphanumeric, get_mongo},
 };
 
 const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
 
-fn get_bucket(client: &mongodb::Client) -> GridFSBucket {
-    let db = client.database(consts::NAME);
+fn get_bucket() -> GridFSBucket {
+    let client = get_mongo();
+    let db = client.database(&consts::NAME);
     GridFSBucket::new(db, Some(GridFSBucketOptions::default()))
 }
 
-pub async fn get_result_file(client: &mongodb::Client, token: &str, file_id: &str) -> Result<(ContentType, impl Stream<Item = Vec<u8>>), &'static str> {
-    let file_model = validate(client, token, file_id).await?;
+pub async fn get_result_file(token: &str, file_id: &str) -> Result<(Mime, impl Stream<Item = Vec<u8>>), &'static str> {
+    let file_model = validate(token, file_id).await?;
     let mime_type = file_model.get_content_type();
-    let bucket = get_bucket(client);
+    let bucket = get_bucket();
     let cursor = bucket.open_download_stream(file_model.id.unwrap()).await.map_err(|_| "Could not find file.")?;
     Ok((mime_type, cursor))
 }
 
-async fn validate(client: &mongodb::Client, token: &str, file_id: &str) -> Result<FileModel, &'static str> {
+async fn validate(token: &str, file_id: &str) -> Result<FileModel, &'static str> {
+    let client = get_mongo();
     if let Ok(id) = ObjectId::from_str(file_id) {
-        let files = client.database(consts::NAME).collection::<FileModel>(FILES_COLLECTION);
+        let files = client.database(&consts::NAME).collection::<FileModel>(FILES_COLLECTION);
         let file = files.find_one(Some(doc! { "_id": id, "token": token}), None).await.map_err(|_| "Could not find file.")?.ok_or("Could not find file.")?;
         return Ok(file);
     }
     Err("Could not find file.")
 }
 
-pub async fn store_result_file(client: &mongodb::Client, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
-    let mut bucket = get_bucket(client);
+pub async fn store_result_file(job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: impl AsyncRead + Unpin) -> Result<String, &'static str> {
+    let client = get_mongo();
+    let mut bucket = get_bucket();
     let file_id = bucket.upload_from_stream(file_name, source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
-    let chunks = client.database(consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
+    let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
     let chunks_result = chunks.update_many(doc! { "files_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"uploadDate": DateTime::now()}}, None);
-    let files = client.database(consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
+    let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
     let file_result = files.update_one(doc! { "_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"token": token, "mimeType": mime_type}}, None);
     if file_result.await.is_err() {
         warn!("Could not set uploadDate for chunks of {}.", &file_id, {fileId: &file_id, jobId: &job_id});
@@ -54,9 +57,10 @@ pub async fn store_result_file(client: &mongodb::Client, job_id: &str, token: &s
     Ok(file_id)
 }
 
-pub async fn set_expire_after(client: &mongodb::Client, seconds: u64) -> Result<(), Error> {
-    let files = client.database(consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
-    let chunks = client.database(consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
+pub async fn set_expire_after(seconds: u64) -> Result<(), Error> {
+    let client = get_mongo();
+    let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
+    let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
 
     let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
     let index = IndexModel::builder().keys(doc! {"uploadDate": 1}).options(options).build();
@@ -73,8 +77,7 @@ pub struct TempJobFileProvider {
 
 impl TempJobFileProvider {
     pub async fn build(job_id: &str) -> TempJobFileProvider {
-        let file_name = FileName::new(job_id);
-        let dir = env::temp_dir().join(file_name.as_str().unwrap());
+        let dir = env::temp_dir().join(job_id);
         fs::create_dir_all(&dir).await.unwrap();
         TempJobFileProvider { job_directory: dir }
     }

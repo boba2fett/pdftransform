@@ -1,8 +1,7 @@
 use std::{path::Path, str::FromStr};
-
+use mime::Mime;
 use bson::oid::ObjectId;
 use mongodb::bson::DateTime;
-use rocket::http::ContentType;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -91,19 +90,24 @@ pub struct FileModel {
 }
 
 impl FileModel {
-    pub fn get_content_type(&self) -> ContentType {
+    pub fn get_content_type(&self) -> Mime {
         if let Some(mime_type) = &self.mime_type {
-            if let Some(content_type) = ContentType::from_str(mime_type).ok() {
+            if let Some(content_type) = Mime::from_str(mime_type).ok() {
                 return content_type;
             }
         }
         if let Some(extension) = Path::new(&self.filename).extension() {
             if let Some(extension) = extension.to_str() {
-                if let Some(extension_content_type) = ContentType::from_extension(extension) {
-                    return extension_content_type;
+                return match extension {
+                    "pdf" => mime::APPLICATION_PDF,
+                    "png" => mime::IMAGE_PNG,
+                    "jpg" => mime::IMAGE_JPEG,
+                    "jpeg" => mime::IMAGE_JPEG,
+                    "bmp" => mime::IMAGE_BMP,
+                    _ => mime::APPLICATION_OCTET_STREAM
                 }
             }
         }
-        ContentType::Any
+        mime::APPLICATION_OCTET_STREAM
     }
 }

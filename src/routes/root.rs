@@ -1,27 +1,31 @@
-use rocket::{get, response::status::Conflict, serde::json::Json};
-
+use axum::routing::get;
+use axum::{Router, Json};
+use crate::health::get_health;
 use crate::{
     consts::{NAME, VERSION},
-    models::{AvgTimeModel, RootDto, RootLinks},
-    persistence::{jobs_health, DbClient},
+    models::{RootDto, RootLinks, HealthDto},
 };
 
-#[get("/")]
-pub fn root_links<'a>() -> Json<RootDto<'a>> {
-    Json(RootDto {
+pub fn create_route() -> Router {
+    Router::new()
+        .route("/", get(root_links))
+        .route("/health", get(health))
+}
+
+pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
+    Ok(Json(RootDto {
         version: VERSION,
         name: NAME,
         _links: RootLinks {
             transform: "/transform",
             preview: "/preview",
         },
-    })
+    }))
 }
 
-#[get("/health")]
-pub async fn health(client: &DbClient) -> Result<Json<Vec<AvgTimeModel>>, Conflict<&'static str>> {
-    match jobs_health(client).await {
+pub async fn health() -> Result<Json<HealthDto>, &'static str> {
+    match get_health().await {
         Ok(health) => Ok(Json(health)),
-        Err(err) => Err(Conflict(Some(err))),
+        Err(err) => Err(err),
     }
 }

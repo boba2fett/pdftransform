@@ -3,14 +3,13 @@ use mongodb::bson::DateTime;
 use std::str::FromStr;
 
 use crate::{
-    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel},
-    routes::transform_job_route,
+    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel}, routes::transform::transform_job_route,
 };
 
 use super::{generate_30_alphanumeric, get_transformations};
 
-pub async fn get_transform_job_dto(client: &mongodb::Client, job_id: &String, token: String) -> Result<TransformJobDto, &'static str> {
-    let job_model = get_transform_job_model(client, &job_id, &token).await?;
+pub async fn get_transform_job_dto(job_id: &String, token: &str) -> Result<TransformJobDto, &'static str> {
+    let job_model = get_transform_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
     Ok(TransformJobDto {
         message: job_model.message,
@@ -23,8 +22,8 @@ pub async fn get_transform_job_dto(client: &mongodb::Client, job_id: &String, to
     })
 }
 
-pub async fn _get_transform_job_dto(client: &mongodb::Client, job_id: &str) -> Result<TransformJobDto, &'static str> {
-    let job_model = _get_transform_job_model(client, &job_id).await?;
+pub async fn _get_transform_job_dto(job_id: &str) -> Result<TransformJobDto, &'static str> {
+    let job_model = _get_transform_job_model( &job_id).await?;
     let job_id = job_model.id.unwrap().to_string();
     Ok(TransformJobDto {
         message: job_model.message,
@@ -37,8 +36,8 @@ pub async fn _get_transform_job_dto(client: &mongodb::Client, job_id: &str) -> R
     })
 }
 
-pub async fn get_transform_job_model(client: &mongodb::Client, job_id: &str, token: &str) -> Result<TransformJobModel, &'static str> {
-    let jobs = get_transformations(client);
+pub async fn get_transform_job_model(job_id: &str, token: &str) -> Result<TransformJobModel, &'static str> {
+    let jobs = get_transformations();
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.find_one(Some(doc! {"_id": id, "token": token}), None).await {
             if let Some(job_model) = result {
@@ -49,8 +48,8 @@ pub async fn get_transform_job_model(client: &mongodb::Client, job_id: &str, tok
     Err("Could not find job")
 }
 
-pub async fn _get_transform_job_model(client: &mongodb::Client, job_id: &str) -> Result<TransformJobModel, &'static str> {
-    let jobs = get_transformations(client);
+pub async fn _get_transform_job_model(job_id: &str) -> Result<TransformJobModel, &'static str> {
+    let jobs = get_transformations();
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.find_one(Some(doc!("_id": id)), None).await {
             if let Some(job_model) = result {
@@ -61,7 +60,7 @@ pub async fn _get_transform_job_model(client: &mongodb::Client, job_id: &str) ->
     Err("Could not find job")
 }
 
-pub async fn create_new_transform_job(client: &mongodb::Client, create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
+pub async fn create_new_transform_job(create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
     let job = TransformJobModel {
         id: None,
         status: JobStatus::InProgress,
@@ -73,11 +72,11 @@ pub async fn create_new_transform_job(client: &mongodb::Client, create_job: Crea
         token: generate_30_alphanumeric(),
         created: DateTime::now(),
     };
-    save_new_transform_job(client, job).await
+    save_new_transform_job(job).await
 }
 
-pub async fn save_new_transform_job(client: &mongodb::Client, job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
-    let jobs = get_transformations(client);
+pub async fn save_new_transform_job(job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
+    let jobs = get_transformations();
     let job_clone = job.clone();
     if let Ok(insert_result) = jobs.insert_one(job, None).await {
         let id = insert_result.inserted_id.as_object_id().unwrap();

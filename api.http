@@ -1,5 +1,5 @@
 @endpoint = http://localhost:8000
-@job = /transform/63a36ed4b45e3b289d303cb7?token=uQ1bENJ9C9CnbepxGDkm1gwwz6Hk4M
+@job = /transform/63d6b3822ffba174294e117b?token=c78JUn9NXMtFtkv1ZcVGYeflYFtymn
 ###
 GET {{endpoint}}
 ###
@@ -10,6 +10,11 @@ Content-Type: application/json
 
 < transform.json
 ###
+POST {{endpoint}}/transform
+Content-Type: application/json
+
+< transform_many.json
+###
 POST {{endpoint}}/preview
 Content-Type: application/json
 
@@ -17,17 +22,17 @@ Content-Type: application/json
 ###
 GET {{endpoint}}{{job}}
 ###
-POST {{endpoint}}/preview
+POST {{endpoint}}/preview/sync
 Content-Type: application/pdf
 
 < samples/pdf-example-encryption.pdf
 ###
-POST {{endpoint}}/preview
+POST {{endpoint}}/preview/sync
 Content-Type: application/pdf
 
 < samples/sample06.pdf
 ###
-POST {{endpoint}}/preview
+POST {{endpoint}}/preview/sync
 Content-Type: application/pdf
 
 < samples/example_041.pdf

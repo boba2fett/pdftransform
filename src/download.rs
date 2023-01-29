@@ -1,5 +1,6 @@
+use axum::body::Bytes;
 use futures::StreamExt;
-use rocket::http::ContentType;
+use mime::Mime;
 use std::{path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 use reqwest::{header::CONTENT_TYPE, Response};
@@ -9,7 +10,7 @@ use crate::{consts::PARALLELISM, files::TempJobFileProvider, models::SourceFile}
 pub struct DownloadedSourceFile {
     pub id: String,
     pub path: PathBuf,
-    pub content_type: ContentType,
+    pub content_type: Mime,
 }
 
 pub async fn download_source_files(client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>> {
@@ -32,10 +33,10 @@ async fn download_source_file(client: &reqwest::Client, source_file: SourceFile,
     })
 }
 
-pub async fn download_source(client: &reqwest::Client, source_uri: &str, job_files: &TempJobFileProvider, content_type: &Option<String>) -> Result<(PathBuf, ContentType), &'static str> {
+pub async fn download_source(client: &reqwest::Client, source_uri: &str, job_files: &TempJobFileProvider, content_type: &Option<String>) -> Result<(PathBuf, Mime), &'static str> {
     let path = job_files.get_path();
     let mut response = client.get(source_uri).send().await.map_err(|_| "Could not load document.")?;
-    let content_type = determine_content_type(&response, content_type)?;
+    let content_type = determine_content_type(&response, &content_type)?;
     let mut file = tokio::fs::File::create(&path).await.map_err(|_| "Could not create file.")?;
     while let Some(mut item) = response.chunk().await.map_err(|_| "Could not read response.")? {
         file.write_all_buf(&mut item).await.map_err(|_| "Could not write to file.")?;
@@ -43,21 +44,21 @@ pub async fn download_source(client: &reqwest::Client, source_uri: &str, job_fil
     Ok((path, content_type))
 }
 
-fn determine_content_type(response: &Response, force_content_type: &Option<String>) -> Result<ContentType, &'static str> {
+fn determine_content_type(response: &Response, force_content_type: &Option<String>) -> Result<Mime, &'static str> {
     match force_content_type {
-        Some(content_type) => ContentType::from_str(content_type).map_err(|_| "Content-Type is not recognized."),
+        Some(content_type) => Ok(Mime::from_str(content_type).map_err(|_| "Could not get MimeType")?,),
         None => {
             let content_type = response.headers().get(CONTENT_TYPE);
             let content_type = match content_type {
-                Some(content_type) => ContentType::from_str(content_type.to_str().map_err(|_| "Could not load Content-Type")?).map_err(|_| "Could not load Content-Type")?,
-                None => ContentType::PDF,
+                Some(content_type) => Mime::from_str(content_type.to_str().map_err(|_| "Could not get MimeType")?).map_err(|_| "Could not get MimeType")?,
+                None => mime::APPLICATION_PDF,
             };
             Ok(content_type)
         },
     }
 }
 
-pub async fn download_source_bytes(client: &reqwest::Client, source_uri: &str) -> Result<rocket::http::hyper::body::Bytes, &'static str> {
+pub async fn download_source_bytes(client: &reqwest::Client, source_uri: &str) -> Result<Bytes, &'static str> {
     let response = client.get(source_uri).send().await.map_err(|_| "Could not load document.")?;
     match response.error_for_status() {
         Ok(response) => response.bytes().await.map_err(|_| "Could not read source."),

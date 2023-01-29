@@ -2,8 +2,9 @@ use crate::{
     download::DownloadedSourceFile,
     files::store_result_file,
     models::{Document, Part, Rotation, TransformDocumentResult},
-    routes::file_route, mime::is_supported_image, consts::PDFIUM,
+    consts::PDFIUM, routes::files::file_route,
 };
+use mime::Mime;
 use pdfium_render::prelude::*;
 
 pub fn init_pdfium() -> Pdfium {
@@ -11,7 +12,7 @@ pub fn init_pdfium() -> Pdfium {
 }
 
 pub async fn get_transformation<'a>(
-    db_client: &mongodb::Client, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>,
+    job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>,
 ) -> Result<Vec<TransformDocumentResult>, &'static str> {
     let results: Vec<_> = {
         let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
@@ -45,7 +46,7 @@ pub async fn get_transformation<'a>(
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {
-                    let file_id = store_result_file(db_client, &job_id, &token, &document.id, Some("application/pdf"), &*bytes).await?;
+                    let file_id = store_result_file(&job_id, &token, &document.id, Some("application/pdf"), &*bytes).await?;
 
                     Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
                         download_url: file_route(&file_id, token),
@@ -146,4 +147,11 @@ fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &Pd
         }
     }
     Ok(())
+}
+
+pub fn is_supported_image(content_type: &Mime) -> bool {
+    content_type.eq(&mime::IMAGE_PNG)
+      || content_type.eq(&mime::IMAGE_JPEG)
+      || content_type.eq(&mime::IMAGE_GIF)
+      || content_type.eq(&mime::IMAGE_BMP)
 }

@@ -7,46 +7,49 @@ use mongodb::{
     Client, Collection, IndexModel,
 };
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use rocket_db_pools::Database;
 use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
 use crate::{
-    consts::NAME,
+    consts::{NAME, MONGO_CLIENT},
     models::{AvgTimeModel, DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
 };
 
-#[derive(Database)]
-#[database("db")]
-pub struct DbClient(pub Client);
-
-pub async fn set_expire_after(mongo_uri: &str, seconds: u64) -> Result<Client, Error> {
+pub async fn init_mongo(mongo_uri: &str) -> Result<mongodb::Client, Error> {
     let options = ClientOptions::parse(&mongo_uri).await?;
-    let client = Client::with_options(options)?;
-    let jobs = get_jobs::<DummyModel>(&client);
+    Client::with_options(options)
+}
+
+pub fn get_mongo() -> &'static mongodb::Client {
+    unsafe { MONGO_CLIENT.as_ref().unwrap() }
+}
+
+pub async fn set_expire_after(seconds: u64) -> Result<(), Error> {
+    let jobs = get_jobs::<DummyModel>();
 
     let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
     let index = IndexModel::builder().keys(doc! {"created": 1}).options(options).build();
 
     jobs.create_index(index.clone(), None).await?;
 
-    Ok(client)
+    Ok(())
 }
 
-pub fn get_transformations(db_client: &mongodb::Client) -> Collection<TransformJobModel> {
-    get_jobs(db_client)
+pub fn get_transformations() -> Collection<TransformJobModel> {
+    get_jobs()
 }
 
-pub fn get_previews(db_client: &mongodb::Client) -> Collection<PreviewJobModel> {
-    get_jobs(db_client)
+pub fn get_previews() -> Collection<PreviewJobModel> {
+    get_jobs()
 }
 
-pub fn get_jobs<T>(db_client: &mongodb::Client) -> Collection<T> {
-    db_client.database(NAME).collection("jobs")
+pub fn get_jobs<T>() -> Collection<T> {
+    let client = get_mongo();
+    client.database(&NAME).collection("jobs")
 }
 
-pub async fn set_ready<ResultType: Serialize>(client: &mongodb::Client, job_id: &str, results: ResultType) -> Result<(), &'static str> {
-    let jobs = get_jobs::<DummyModel>(client);
+pub async fn set_ready<ResultType: Serialize>(job_id: &str, results: ResultType) -> Result<(), &'static str> {
+    let jobs = get_jobs::<DummyModel>();
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs
             .update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Finished as u32 ,"result": bson::to_bson(&results).ok(), "finished": DateTime::now()}}, None)
@@ -60,8 +63,8 @@ pub async fn set_ready<ResultType: Serialize>(client: &mongodb::Client, job_id: 
     Err("Could not find job")
 }
 
-pub async fn set_error(client: &mongodb::Client, job_id: &str, err: &str) -> Result<(), &'static str> {
-    let jobs = get_jobs::<DummyModel>(client);
+pub async fn set_error(job_id: &str, err: &str) -> Result<(), &'static str> {
+    let jobs = get_jobs::<DummyModel>();
     if let Ok(id) = ObjectId::from_str(&job_id) {
         if let Ok(result) = jobs.update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Error as u32, "message": err, "finished": DateTime::now()}}, None).await {
             if result.modified_count > 0 {
@@ -76,8 +79,8 @@ pub fn generate_30_alphanumeric() -> String {
     thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect()
 }
 
-pub async fn jobs_health(client: &mongodb::Client) -> Result<Vec<AvgTimeModel>, &'static str> {
-    let cursor = get_jobs::<DummyModel>(client)
+pub async fn jobs_health() -> Result<Vec<AvgTimeModel>, &'static str> {
+    let cursor = get_jobs::<DummyModel>()
         .aggregate(
             [
                 doc! {

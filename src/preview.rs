@@ -1,16 +1,14 @@
 use image::ImageFormat;
-use mongodb::Client;
 use pdfium_render::{prelude::PdfDocument, render_config::PdfRenderConfig};
 use std::io::Cursor;
 
 use crate::{
     files::store_result_file,
     models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
-    routes::file_route,
-    consts::PDFIUM,
+    consts::PDFIUM, routes::files::file_route,
 };
 
-pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
+pub async fn get_preview<'a>(job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
         let document = pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
@@ -33,7 +31,7 @@ pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_
                 let text = page.text().map_err(|_| "")?.all();
 
                 Ok(async move {
-                    let file_id = store_result_file(&client, &job_id, &token, &page_number, Some("image/jpeg"), &*bytes).await?;
+                    let file_id = store_result_file(&job_id, &token, &page_number, Some("image/jpeg"), &*bytes).await?;
                     Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                         download_url: file_route(&file_id, &token),
                         text,
@@ -49,7 +47,7 @@ pub async fn get_preview<'a>(client: &Client, job_id: &str, token: &str, source_
                 let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
 
                 Ok(async move {
-                    let file_id = store_result_file(&client, &job_id, &token, &name, None, &*bytes).await?;
+                    let file_id = store_result_file(&job_id, &token, &name, None, &*bytes).await?;
                     Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                         name,
                         download_url: file_route(&file_id, &token),
