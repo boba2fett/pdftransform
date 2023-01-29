@@ -1,5 +1,5 @@
 @endpoint = http://localhost:8000
-@job = /transform/63d5580a5aa5d83a71d11bed?token=DHvuHwcRctmuuquYppDo9M8LDTNkPY
+@job = /transform/63d6b3822ffba174294e117b?token=c78JUn9NXMtFtkv1ZcVGYeflYFtymn
 ###
 GET {{endpoint}}
 ###
@@ -9,6 +9,11 @@ POST {{endpoint}}/transform
 Content-Type: application/json
 
 < transform.json
+###
+POST {{endpoint}}/transform
+Content-Type: application/json
+
+< transform_many.json
 ###
 POST {{endpoint}}/preview
 Content-Type: application/json

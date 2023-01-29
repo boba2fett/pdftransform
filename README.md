@@ -6,16 +6,14 @@
 
 ## Runtime environment variables
 
-- EXPIRE_AFTER_SECONDS=90000 25h expire time for jobs (always set the same with same mongodb as index of mongodb is not updated)
+- EXPIRE_AFTER_SECONDS=90000 25h expire time for jobs (always set the same with same mongodb as index of mongodb is not updated, 0 => don't set)
 - PARALLELISM=10 parallel downloads for source files
-- MAX_KIBIBYTES=4096 maximum for preview input files
 
 ## TODOs
 
 - make images work better (startpage?, endpage?)
 - support tiffs
 - make preview faster by opting out of features
-- change pdfium to load once as Send and Sync are now implemented in 0.7.26
 
 ## Done
 

@@ -1,0 +1,181 @@
+{
+    "callbackUri": "https://en6nv5h9gx7s3.x.pipedream.net/",
+    "documents": [
+        {
+            "id": "d1",
+            "parts": [
+                {
+                    "sourceFile": "s0"
+                },
+                {
+                    "sourceFile": "s1",
+                    "endPageNumber": 2
+                },
+                {
+                    "sourceFile": "s1",
+                    "startPageNumber": 82
+                },
+                {
+                    "sourceFile": "s1",
+                    "startPageNumber": 5,
+                    "endPageNumber": 6,
+                    "rotation": 180
+                },
+                {
+                    "sourceFile": "s0",
+                    "rotation": -270
+                },
+                {
+                    "sourceFile": "i0"
+                },
+                {
+                    "sourceFile": "i0",
+                    "rotation": -270
+                },
+                {
+                    "sourceFile": "i9"
+                },
+                {
+                    "sourceFile": "i1"
+                },
+                {
+                    "sourceFile": "i2"
+                },
+                {
+                    "sourceFile": "i3"
+                },
+                {
+                    "sourceFile": "i4"
+                },
+                {
+                    "sourceFile": "i5"
+                },
+                {
+                    "sourceFile": "i6"
+                },
+                {
+                    "sourceFile": "i7"
+                },
+                {
+                    "sourceFile": "i8"
+                },
+                {
+                    "sourceFile": "s2"
+                },
+                {
+                    "sourceFile": "s3"
+                },
+                {
+                    "sourceFile": "s4"
+                },
+                {
+                    "sourceFile": "s5"
+                },
+                {
+                    "sourceFile": "s6"
+                },
+                {
+                    "sourceFile": "s7"
+                },
+                {
+                    "sourceFile": "s8"
+                },
+                {
+                    "sourceFile": "s9"
+                }
+            ],
+            "attachments": [
+                {
+                    "sourceFile": "s1",
+                    "name": "source_file.pdf"
+                },
+                {
+                    "sourceFile": "i0",
+                    "name": "test.png"
+                }
+            ]
+        }
+    ],
+    "sourceFiles": [
+        {
+            "id": "s0",
+            "uri": "https://tcpdf.org/files/examples/example_041.pdf"
+        },
+        {
+            "id": "s1",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s2",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s3",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s4",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s5",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s6",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s7",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s8",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "s9",
+            "uri": "https://courses.cs.washington.edu/courses/cse571/16au/slides/10-sdf.pdf"
+        },
+        {
+            "id": "i0",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i1",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i2",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i3",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i4",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i5",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i6",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i7",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i8",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "i9",
+            "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        }
+    ]
+}

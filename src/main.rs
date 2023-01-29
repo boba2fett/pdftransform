@@ -1,6 +1,6 @@
 use axum::Router;
 use kv_log_macro::info;
-use pdftransform::consts::{MAX_KIBIBYTES, PARALLELISM, PDFIUM, MONGO_CLIENT};
+use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
 use pdftransform::transform::init_pdfium;
@@ -12,7 +12,6 @@ async fn main() {
     json_env_logger2::init();
     setup_expire_time().await;
     setup_parallelism();
-    setup_max_size();
     setup_pdfium();
 
     let app = Router::new()
@@ -39,12 +38,13 @@ async fn setup_expire_time() {
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 
     let expire = match expire {
-        Ok(Ok(expire)) if expire > 0 => expire,
+        Ok(Ok(expire)) => expire,
         _ => 60 * 60 * 25,
     };
-
-    persistence::set_expire_after(expire).await.unwrap();
-    files::set_expire_after(expire).await.unwrap();
+    if expire != 0 {
+        persistence::set_expire_after(expire).await.unwrap();
+        files::set_expire_after(expire).await.unwrap();
+    }
 }
 
 fn setup_parallelism() {
@@ -53,16 +53,6 @@ fn setup_parallelism() {
         PARALLELISM = match parallelism {
             Ok(Ok(parallelism)) if parallelism > 0 => parallelism,
             _ => PARALLELISM,
-        }
-    }
-}
-
-fn setup_max_size() {
-    let max_kibibytes = env::var("MAX_KIBIBYTES").map(|max| max.parse::<usize>());
-    unsafe {
-        MAX_KIBIBYTES = match max_kibibytes {
-            Ok(Ok(max)) if max > 0 => max,
-            _ => MAX_KIBIBYTES,
         }
     }
 }

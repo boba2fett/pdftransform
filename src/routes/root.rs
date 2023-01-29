@@ -1,9 +1,9 @@
 use axum::routing::get;
 use axum::{Router, Json};
+use crate::health::get_health;
 use crate::{
     consts::{NAME, VERSION},
-    models::{AvgTimeModel, RootDto, RootLinks},
-    persistence::jobs_health,
+    models::{RootDto, RootLinks, HealthDto},
 };
 
 pub fn create_route() -> Router {
@@ -23,8 +23,8 @@ pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
     }))
 }
 
-pub async fn health() -> Result<Json<Vec<AvgTimeModel>>, &'static str> {
-    match jobs_health().await {
+pub async fn health() -> Result<Json<HealthDto>, &'static str> {
+    match get_health().await {
         Ok(health) => Ok(Json(health)),
         Err(err) => Err(err),
     }
