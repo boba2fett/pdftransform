@@ -5,6 +5,9 @@
             "id": "d1",
             "parts": [
                 {
+                    "sourceFile": "h0"
+                },
+                {
                     "sourceFile": "s0"
                 },
                 {
@@ -57,6 +60,10 @@
         {
             "id": "i0",
             "uri": "https://static.wikia.nocookie.net/fcs-vs-battle/images/3/35/ASDFGuy_Vector.png/revision/latest?cb=20201113171318"
+        },
+        {
+            "id": "h0",
+            "uri": "https://www.merriam-webster.com/dictionary/sample"
         }
     ]
 }

@@ -66,6 +66,7 @@ pub async fn create_new_preview_job(create_job: CreatePreviewJobDto) -> Result<(
         status: JobStatus::InProgress,
         callback_uri: create_job.callback_uri,
         source_uri: Some(create_job.source_uri),
+        source_mime_type: create_job.source_mime_type.unwrap_or("application/pdf".to_string()),
         result: None,
         message: None,
         token: generate_30_alphanumeric(),

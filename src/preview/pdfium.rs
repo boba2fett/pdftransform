@@ -8,7 +8,7 @@ use crate::{
     consts::PDFIUM, routes::files::file_route,
 };
 
-pub async fn get_preview<'a>(job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
+pub async fn get_pdf_preview(job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
     let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
         let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
         let document = pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;

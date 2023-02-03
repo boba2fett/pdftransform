@@ -1,9 +1,13 @@
+use std::path::PathBuf;
+
 use crate::{
     download::DownloadedSourceFile,
-    files::store_result_file,
+    files::{store_result_file, TempJobFileProvider},
     models::{Document, Part, Rotation, TransformDocumentResult},
-    consts::PDFIUM, routes::files::file_route,
+    consts::{PDFIUM}, routes::files::file_route,
 };
+use kv_log_macro::info;
+use libreoffice_rs::{Office, urls};
 use mime::Mime;
 use pdfium_render::prelude::*;
 
@@ -11,8 +15,12 @@ pub fn init_pdfium() -> Pdfium {
     Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
 
+pub fn init_libre() -> Office {
+    Office::new("/usr/lib/libreoffice/program").unwrap()
+}
+
 pub async fn get_transformation<'a>(
-    job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>,
+    job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider
 ) -> Result<Vec<TransformDocumentResult>, &'static str> {
     let results: Vec<_> = {
         let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
@@ -33,7 +41,12 @@ pub async fn get_transformation<'a>(
                                 add_image(&mut new_doc, &source_file, &part)?;
                             }
                             else {
-                                let source_doc = pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
+                                let source_doc = if source_file.content_type != mime::APPLICATION_PDF {
+                                    let source_path = load_from_libre(&source_file.path, job_files)?;
+                                    pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
+                                } else {
+                                    pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
+                                };
                                 *cache_ref = Some((&part.source_file, source_doc));
                                 add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                             }
@@ -154,4 +167,17 @@ pub fn is_supported_image(content_type: &Mime) -> bool {
       || content_type.eq(&mime::IMAGE_JPEG)
       || content_type.eq(&mime::IMAGE_GIF)
       || content_type.eq(&mime::IMAGE_BMP)
+}
+
+pub fn load_from_libre(source: &PathBuf, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
+    let mut libre = init_libre();
+    let uri = urls::local_into_abs(source.to_string_lossy()).map_err(|_| "Could not open document.")?;
+    info!("Loading libreoffice file from {}", &uri.to_string());//'{}'", &job_id, { jobId: job_id });
+    let mut doc = libre.document_load(uri).map_err(|_| "Could not open document.")?;
+    info!("Loaded libreoffice file");
+    let result_path = job_files.get_path();
+    info!("Save libreoffice file as {}", &result_path.to_string_lossy());
+    doc.save_as(&result_path.to_string_lossy(), "pdf", None);
+    info!("Saved libreoffice file");
+    Ok(result_path)
 }

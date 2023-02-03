@@ -25,7 +25,7 @@ pub async fn process_transform_job(job_id: String, job_model: Option<TransformJo
         match failed {
             None => {
                 let source_files: Vec<&DownloadedSourceFile> = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-                let results: Result<_, &str> = get_transformation(&job_id, &job_model.token, &job_model.documents, source_files).await;
+                let results: Result<_, &str> = get_transformation(&job_id, &job_model.token, &job_model.documents, source_files, &job_files).await;
                 match results {
                     Ok(results) => ready(&job_id, &job_model.callback_uri, &client, results, |job_id| _get_transform_job_dto(job_id)).await,
                     Err(err) => error( &job_id, &job_model.callback_uri, &client, err).await,
@@ -50,7 +50,7 @@ pub async fn process_preview_job(job_id: String, job_model: Option<PreviewJobMod
 
         match source_file {
             Ok(source_file) => {
-                let result: Result<_, &str> = get_preview(&job_id, &job_model.token, source_file.to_vec()).await;
+                let result: Result<_, &str> = get_preview(&job_id, &job_model.token, source_file.to_vec(), &job_model.source_mime_type).await;
                 match result {
                     Ok(result) => ready(&job_id, &job_model.callback_uri, &client, result, |job_id| _get_preview_job_dto(job_id)).await,
                     Err(err) => error(&job_id, &job_model.callback_uri, &client, err).await,

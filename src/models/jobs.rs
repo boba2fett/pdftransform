@@ -50,6 +50,7 @@ pub struct PreviewJobModel {
     pub message: Option<String>,
     pub callback_uri: Option<String>,
     pub source_uri: Option<String>,
+    pub source_mime_type: String,
     pub result: Option<PreviewResult>,
 }
 

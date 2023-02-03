@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use axum::{routing::{get, post}, response::IntoResponse, extract::RawBody};
+use axum::{routing::{get, post}, response::IntoResponse, extract::RawBody, http::HeaderMap};
 use bytes::Bytes;
-use reqwest::StatusCode;
+use reqwest::{StatusCode, header::CONTENT_TYPE};
 use axum::{extract::{Path, Query}};
 use axum::{Router, Json};
 use tokio_stream::StreamExt;
@@ -41,7 +41,8 @@ pub async fn create_preview_job(Json(create_job): Json<CreatePreviewJobDto>) -> 
     }
 }
 
-pub async fn preview_sync(RawBody(body): RawBody) -> impl IntoResponse {
+pub async fn preview_sync(headers: HeaderMap, RawBody(body): RawBody) -> impl IntoResponse {
+    let content_type = headers.get(CONTENT_TYPE).map(|content_type| content_type.to_str().unwrap_or("application/pdf")).unwrap_or("application/pdf");
     let job_id = generate_30_alphanumeric();
     let token = generate_30_alphanumeric();
     let bytes: Vec<_> = body.collect().await;
@@ -49,7 +50,7 @@ pub async fn preview_sync(RawBody(body): RawBody) -> impl IntoResponse {
     match bytes {
         Ok(bytes) => {
             let bytes = bytes.concat();
-            let result = get_preview(&job_id, &token, bytes).await.map(|r| Json(r));
+            let result = get_preview(&job_id, &token, bytes, content_type).await.map(|r| Json(r));
             match result {
                 Ok(result) => Ok(result),
                 Err(err) => Err((StatusCode::CONFLICT, err)),

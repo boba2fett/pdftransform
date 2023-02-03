@@ -3,7 +3,7 @@ use kv_log_macro::info;
 use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
-use pdftransform::transform::init_pdfium;
+use pdftransform::transform::{init_pdfium, init_libre};
 use std::env;
 use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 
@@ -13,6 +13,7 @@ async fn main() {
     setup_expire_time().await;
     setup_parallelism();
     setup_pdfium();
+    setup_libre();
 
     let app = Router::new()
         .merge(routes::root::create_route())
@@ -62,4 +63,8 @@ fn setup_pdfium() {
     unsafe {
         PDFIUM = Some(pdfium);
     }
+}
+
+fn setup_libre() {
+    init_libre();
 }

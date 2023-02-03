@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct CreatePreviewJobDto {
     pub callback_uri: Option<String>,
     pub source_uri: String,
+    pub source_mime_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
