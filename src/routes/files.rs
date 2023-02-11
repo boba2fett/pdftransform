@@ -15,7 +15,8 @@ pub async fn file(Path(file_id): Path<String>, Query(params): Query<HashMap<Stri
     if let Ok(file) = get_result_file(&token, &file_id).await {
         let mime = &file.0;
         let file = StreamReader {
-            stream: file.1
+            stream: file.1,
+            buffer: vec![]
         };
         let stream = ReaderStream::new(file);
         let body = StreamBody::new(stream);

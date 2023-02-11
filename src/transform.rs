@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::{PathBuf, Path}, process::Command, time::Duration};
 
 use crate::{
     download::DownloadedSourceFile,
@@ -7,16 +7,18 @@ use crate::{
     consts::{PDFIUM}, routes::files::file_route,
 };
 use kv_log_macro::info;
-use libreoffice_rs::{Office, urls};
 use mime::Mime;
 use pdfium_render::prelude::*;
+use wait_timeout::ChildExt;
 
 pub fn init_pdfium() -> Pdfium {
     Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
 }
 
-pub fn init_libre() -> Office {
-    Office::new("/usr/lib/libreoffice/program").unwrap()
+const LIBRE: &str = "/usr/bin/soffice";
+
+pub fn check_libre() -> bool {
+    Path::new("/usr/lib/libreoffice/program").exists()
 }
 
 pub async fn get_transformation<'a>(
@@ -42,14 +44,17 @@ pub async fn get_transformation<'a>(
                             }
                             else {
                                 let source_doc = if source_file.content_type != mime::APPLICATION_PDF {
-                                    let source_path = load_from_libre(&source_file.path, job_files)?;
+                                    let source_path = load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
+                                    info!("Converted {} from libre '{}'", source_path.display(), &job_id, { jobId: job_id });
                                     pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
                                 } else {
                                     pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
                                 };
+                                info!("source {} has {} pages '{}'", &source_file.id, source_doc.pages().len(), &job_id, { jobId: job_id });
                                 *cache_ref = Some((&part.source_file, source_doc));
                                 add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                             }
+                            info!("generated {} has {} pages '{}'", &document.id, new_doc.pages().len(), &job_id, { jobId: job_id });
                         }
                     }
                     for attachment in &document.attachments {
@@ -59,6 +64,7 @@ pub async fn get_transformation<'a>(
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {
+                    info!("generated {} is {} KiB '{}'", &document.id, bytes.len()/1024, &job_id, { jobId: job_id });
                     let file_id = store_result_file(&job_id, &token, &document.id, Some("application/pdf"), &*bytes).await?;
 
                     Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
@@ -169,15 +175,32 @@ pub fn is_supported_image(content_type: &Mime) -> bool {
       || content_type.eq(&mime::IMAGE_BMP)
 }
 
-pub fn load_from_libre(source: &PathBuf, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
-    let mut libre = init_libre();
-    let uri = urls::local_into_abs(source.to_string_lossy()).map_err(|_| "Could not open document.")?;
-    info!("Loading libreoffice file from {}", &uri.to_string());//'{}'", &job_id, { jobId: job_id });
-    let mut doc = libre.document_load(uri).map_err(|_| "Could not open document.")?;
-    info!("Loaded libreoffice file");
+pub fn load_from_libre(source: &PathBuf, source_mime_type: &Mime, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
     let result_path = job_files.get_path();
-    info!("Save libreoffice file as {}", &result_path.to_string_lossy());
-    doc.save_as(&result_path.to_string_lossy(), "pdf", None);
-    info!("Saved libreoffice file");
-    Ok(result_path)
+    std::fs::create_dir_all(&result_path).unwrap();
+    let output = &result_path.as_os_str();
+    let result_path = result_path.join(source.file_name().unwrap()).with_extension("pdf");
+    let input = source.as_os_str();
+    
+    let mut child = Command::new(LIBRE)
+        .arg("--headless")
+        .arg("--convert-to")
+        .arg("pdf")
+        .arg(input)
+        .arg("--outdir")
+        .arg(output)
+        .spawn().map_err(|_| "Could not start libre")?;
+
+    let one_sec = Duration::from_secs(30);
+    let status_code = match child.wait_timeout(one_sec).map_err(|_| "Could not wait on libre")? {
+        Some(status) => status.code(),
+        None => {
+            child.kill().map_err(|_| "Could not kill libre")?;
+            child.wait().map_err(|_| "Could not wait for libre")?.code()
+        }
+    };
+    match status_code {
+        Some(0) => Ok(result_path),
+        _ => Err("Something went wrong"),
+    }
 }

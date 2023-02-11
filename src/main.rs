@@ -3,7 +3,7 @@ use kv_log_macro::info;
 use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
-use pdftransform::transform::{init_pdfium, init_libre};
+use pdftransform::transform::{init_pdfium, check_libre};
 use std::env;
 use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 
@@ -66,5 +66,7 @@ fn setup_pdfium() {
 }
 
 fn setup_libre() {
-    init_libre();
+    if !check_libre() {
+        panic!("Libre not installed.")
+    }
 }
