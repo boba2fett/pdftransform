@@ -1,17 +1,20 @@
 use axum::routing::get;
 use axum::{Router, Json};
-use crate::health::get_health;
+use crate::health::get_metrics;
 use crate::{
     consts::{NAME, VERSION},
-    models::{RootDto, RootLinks, HealthDto},
+    models::{RootDto, RootLinks, MetricsDto},
 };
+use axum::http::StatusCode;
 
 pub fn create_route() -> Router {
     Router::new()
         .route("/", get(root_links))
         .route("/health", get(health))
+        .route("/metrics", get(health))
 }
 
+#[tracing::instrument]
 pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
     Ok(Json(RootDto {
         version: VERSION,
@@ -23,9 +26,15 @@ pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
     }))
 }
 
-pub async fn health() -> Result<Json<HealthDto>, &'static str> {
-    match get_health().await {
-        Ok(health) => Ok(Json(health)),
+#[tracing::instrument]
+pub async fn health() -> StatusCode {
+    StatusCode::OK
+}
+
+#[tracing::instrument]
+pub async fn metrics() -> Result<Json<MetricsDto>, &'static str> {
+    match get_metrics().await {
+        Ok(metrics) => Ok(Json(metrics)),
         Err(err) => Err(err),
     }
 }

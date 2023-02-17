@@ -1,14 +1,20 @@
 use axum::Router;
+use axum::error_handling::HandleErrorLayer;
 use kv_log_macro::info;
 use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
 use pdftransform::transform::{init_pdfium, check_libre};
+use reqwest::StatusCode;
+use tower_http::trace::TraceLayer;
 use std::env;
 use std::net::{SocketAddr, IpAddr, Ipv6Addr};
+use std::time::Duration;
+use tower::{timeout::TimeoutLayer, ServiceBuilder};
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt().json().finish();
     json_env_logger2::init();
     setup_expire_time().await;
     setup_parallelism();
@@ -19,7 +25,14 @@ async fn main() {
         .merge(routes::root::create_route())
         .merge(routes::files::create_route())
         .merge(routes::preview::create_route())
-        .merge(routes::transform::create_route());
+        .merge(routes::transform::create_route())
+        .layer(ServiceBuilder::new()
+            .layer(TraceLayer::new_for_http())
+            .layer(HandleErrorLayer::new(|_| async {
+                StatusCode::REQUEST_TIMEOUT
+            }))
+            .layer(TimeoutLayer::new(Duration::from_secs(59))),
+        );
 
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 8000);
     info!("listening on {}", &addr);

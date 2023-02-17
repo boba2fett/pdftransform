@@ -18,6 +18,7 @@ pub fn create_route() -> Router {
         .route("/preview/sync", post(preview_sync))
 }
 
+#[tracing::instrument]
 pub async fn preview_job(Path(job_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
     match get_preview_job_dto(&job_id, token).await {
@@ -30,6 +31,7 @@ pub fn preview_job_route(job_id: &str, token: &str) -> String {
     format!("/preview/{}?token={}", &job_id, token)
 }
 
+#[tracing::instrument]
 pub async fn create_preview_job(Json(create_job): Json<CreatePreviewJobDto>) -> impl IntoResponse {
     match create_new_preview_job(create_job).await {
         Ok((job_dto, job_model)) => {
@@ -41,6 +43,7 @@ pub async fn create_preview_job(Json(create_job): Json<CreatePreviewJobDto>) -> 
     }
 }
 
+#[tracing::instrument]
 pub async fn preview_sync(headers: HeaderMap, RawBody(body): RawBody) -> impl IntoResponse {
     let content_type = headers.get(CONTENT_TYPE).map(|content_type| content_type.to_str().unwrap_or("application/pdf")).unwrap_or("application/pdf");
     let job_id = generate_30_alphanumeric();

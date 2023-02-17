@@ -20,7 +20,7 @@ pub struct RootLinks {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HealthDto {
+pub struct MetricsDto {
     pub jobs: Vec<AvgTimeModel>,
     pub file_handels: usize,
     pub file_handel_limit: usize,
