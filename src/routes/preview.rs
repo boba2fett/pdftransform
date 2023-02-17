@@ -6,7 +6,7 @@ use axum::{extract::{Path, Query}};
 use axum::{Router, Json};
 use tokio_stream::StreamExt;
 
-use crate::{preview::get_preview};
+use crate::{convert::preview::get_preview};
 use crate::convert::process_preview_job;
 use crate::models::{CreatePreviewJobDto,};
 use crate::persistence::{create_new_preview_job, generate_30_alphanumeric, get_preview_job_dto};

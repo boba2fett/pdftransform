@@ -1,14 +1,12 @@
 use futures::Future;
 use serde::Serialize;
-use tracing::{info, span, Level};
+use tracing::info;
 
 use crate::{
     download::{download_source_bytes, download_source_files, DownloadedSourceFile},
     files::TempJobFileProvider,
     models::{PreviewJobModel, TransformJobDto, TransformJobModel},
-    persistence::{_get_preview_job_dto, _get_transform_job_dto, _get_transform_job_model, set_error, set_ready},
-    preview::get_preview,
-    transform::get_transformation,
+    persistence::{_get_preview_job_dto, _get_transform_job_dto, _get_transform_job_model, set_error, set_ready}, convert::{transform::get_transformation, preview::get_preview},
 };
 
 #[tracing::instrument(skip(job_model))]

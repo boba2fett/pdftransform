@@ -8,6 +8,16 @@ use crate::{
 
 use super::{generate_30_alphanumeric, get_previews};
 
+#[async_trait::async_trait]
+pub trait PreviewPersistence {
+    async fn get_preview_job_dto(job_id: &String, token: &str) -> Result<PreviewJobDto, &'static str>;
+    async fn _get_preview_job_dto(job_id: &str) -> Result<PreviewJobDto, &'static str>;
+    async fn get_preview_job_model(job_id: &str, token: &str) -> Result<PreviewJobModel, &'static str>;
+    async fn _get_preview_job_model(job_id: &str) -> Result<PreviewJobModel, &'static str>;
+    async fn create_new_preview_job(create_job: CreatePreviewJobDto) -> Result<(PreviewJobDto, PreviewJobModel), &'static str>;
+    async fn save_new_preview_job(job: PreviewJobModel) -> Result<(PreviewJobDto, PreviewJobModel), &'static str>;
+}
+
 pub async fn get_preview_job_dto(job_id: &String, token: &str) -> Result<PreviewJobDto, &'static str> {
     let job_model = get_preview_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();

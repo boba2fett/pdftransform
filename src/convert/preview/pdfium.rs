@@ -4,8 +4,7 @@ use std::io::Cursor;
 
 use crate::{
     files::store_result_file,
-    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
-    consts::PDFIUM, routes::files::file_route,
+    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature}, routes::files::file_route, util::consts::PDFIUM,
 };
 
 pub async fn get_pdf_preview(job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {

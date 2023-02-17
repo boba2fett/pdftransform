@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use axum::{routing::get, body::{StreamBody}, response::{AppendHeaders, IntoResponse}};
 use reqwest::{StatusCode, header};
 use tokio_util::io::{ReaderStream};
-use crate::{files::get_result_file, stream::StreamReader};
+use crate::{files::get_result_file, util::stream::StreamReader};
 use axum::{Router, extract::{Path, Query}};
 
 pub fn create_route() -> Router {

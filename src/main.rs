@@ -1,9 +1,9 @@
 use axum::Router;
 use axum::error_handling::HandleErrorLayer;
-use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
+use pdftransform::util::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
-use pdftransform::transform::{init_pdfium, check_libre};
+use pdftransform::convert::transform::{init_pdfium, check_libre};
 use reqwest::StatusCode;
 use tower_http::trace::TraceLayer;
 use tracing::info;

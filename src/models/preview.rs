@@ -1,4 +1,4 @@
-use crate::serialize::base64;
+use crate::util::serialize::base64;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

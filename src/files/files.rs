@@ -8,13 +8,19 @@ use std::{env, path::PathBuf, str::FromStr, time::Duration};
 use tokio::fs;
 
 use crate::{
-    consts::{self},
     models::{DummyModel, FileModel},
-    persistence::{generate_30_alphanumeric, get_mongo},
+    persistence::{generate_30_alphanumeric, get_mongo}, util::consts,
 };
 
 const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
+
+
+#[async_trait::async_trait]
+pub trait FileStorage {
+    async fn get_result_file<S>(token: &str, file_id: &str) -> Result<(Mime, S), &'static str> where S: Stream<Item = Vec<u8>>;
+    async fn store_result_file(job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: impl AsyncRead + Unpin) -> Result<String, &'static str>;
+}
 
 fn get_bucket() -> GridFSBucket {
     let client = get_mongo();
@@ -68,6 +74,11 @@ pub async fn set_expire_after(seconds: u64) -> Result<(), Error> {
     files.create_index(index.clone(), None).await?;
     chunks.create_index(index, None).await?;
     Ok(())
+}
+
+#[async_trait::async_trait]
+pub trait TempJobFileProviderFactory {
+    async fn build(job_id: &str) -> TempJobFileProvider;
 }
 
 #[derive(Debug)]

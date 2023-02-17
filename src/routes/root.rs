@@ -1,8 +1,8 @@
 use axum::routing::get;
 use axum::{Router, Json};
-use crate::health::get_metrics;
+use crate::util::health::get_metrics;
 use crate::{
-    consts::{NAME, VERSION},
+    util::consts::{NAME, VERSION},
     models::{RootDto, RootLinks, MetricsDto},
 };
 use axum::http::StatusCode;

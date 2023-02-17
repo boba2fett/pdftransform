@@ -5,7 +5,14 @@ use std::{path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 use reqwest::{header::CONTENT_TYPE, Response};
 
-use crate::{consts::PARALLELISM, files::TempJobFileProvider, models::SourceFile};
+use crate::{util::consts::PARALLELISM, files::TempJobFileProvider, models::SourceFile};
+
+#[async_trait::async_trait]
+pub trait DownloadService {
+    async fn download_source_files(client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>>;
+    async fn download_source(client: &reqwest::Client, source_uri: &str, job_files: &TempJobFileProvider, content_type: &Option<String>) -> Result<(PathBuf, Mime), &'static str>;
+    async fn download_source_bytes(client: &reqwest::Client, source_uri: &str) -> Result<Bytes, &'static str>;
+}
 
 pub struct DownloadedSourceFile {
     pub id: String,

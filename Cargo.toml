@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.4"
+async-trait = "0.1.63"
 mongodb = "2.3.1"
 mongodb-gridfs = "0.2.2"
 bson = { version = "2.5.0", features = ["chrono-0_4"] }

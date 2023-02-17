@@ -11,7 +11,7 @@ use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
 use crate::{
-    consts::{NAME, MONGO_CLIENT},
+    util::consts::{NAME, MONGO_CLIENT},
     models::{AvgTimeModel, DummyModel, JobStatus, PreviewJobModel, TransformJobModel},
 };
 

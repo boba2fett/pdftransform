@@ -8,6 +8,16 @@ use crate::{
 
 use super::{generate_30_alphanumeric, get_transformations};
 
+#[async_trait::async_trait]
+pub trait TransformPersistence {
+    async fn get_preview_job_dto(job_id: &String, token: &str) -> Result<TransformJobDto, &'static str>;
+    async fn _get_transform_job_dto(job_id: &str) -> Result<TransformJobDto, &'static str>;
+    async fn get_preview_job_model(job_id: &str, token: &str) -> Result<TransformJobModel, &'static str>;
+    async fn _get_preview_job_model(job_id: &str) -> Result<TransformJobModel, &'static str>;
+    async fn create_new_preview_job(create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
+    async fn save_new_preview_job(job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
+}
+
 pub async fn get_transform_job_dto(job_id: &String, token: &str) -> Result<TransformJobDto, &'static str> {
     let job_model = get_transform_job_model(&job_id, &token).await?;
     let job_id = job_model.id.unwrap().to_string();
