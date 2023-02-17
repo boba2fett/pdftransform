@@ -1,6 +1,6 @@
 use futures::Future;
-use kv_log_macro::info;
 use serde::Serialize;
+use tracing::{info, span, Level};
 
 use crate::{
     download::{download_source_bytes, download_source_files, DownloadedSourceFile},
@@ -11,14 +11,15 @@ use crate::{
     transform::get_transformation,
 };
 
+#[tracing::instrument(skip(job_model))]
 pub async fn process_transform_job(job_id: String, job_model: Option<TransformJobModel>) {
-    info!("Starting job '{}'", &job_id, { jobId: job_id });
+    info!("Starting job");
     let job_model = job_model.ok_or(_get_transform_job_model(&job_id).await);
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;
         let source_files = download_source_files(&client, job_model.source_files, &job_files).await;
-        info!("Downloaded all files for job '{}'", &job_id, { jobId: job_id });
+        info!("Downloaded all files for job");
 
         let failed = source_files.iter().find(|source_file| source_file.is_err());
 
@@ -39,14 +40,15 @@ pub async fn process_transform_job(job_id: String, job_model: Option<TransformJo
     }
 }
 
+#[tracing::instrument(skip(job_model))]
 pub async fn process_preview_job(job_id: String, job_model: Option<PreviewJobModel>) {
-    info!("Starting job '{}'", &job_id, { jobId: job_id });
+    info!("Starting job");
     let job_model = job_model.ok_or(_get_transform_job_model(&job_id).await);
     if let Ok(job_model) = job_model {
         let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
         let job_files = TempJobFileProvider::build(&job_id).await;
         let source_file = download_source_bytes(&client, &job_model.source_uri.unwrap()).await;
-        info!("Downloaded file for job '{}'", &job_id, { jobId: job_id });
+        info!("Downloaded file for job");
 
         match source_file {
             Ok(source_file) => {
@@ -71,7 +73,7 @@ async fn ready<'a, 'b, ResultType: Serialize, JobType: Serialize + Sized, F, Fut
     F: FnOnce(&'b str) -> Fut,
     Fut: Future<Output = Result<JobType, &'static str>> + Send,
 {
-    info!("Finished job '{}'", &job_id, { jobId: job_id });
+    info!("Finished job");
     let result = set_ready(job_id, result).await;
     if let Err(err) = result {
         error(job_id, callback_uri, client, err).await;
@@ -89,7 +91,7 @@ async fn ready<'a, 'b, ResultType: Serialize, JobType: Serialize + Sized, F, Fut
 }
 
 async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Client, err: &str) {
-    info!("Finished job '{}' with error {}", &job_id, err, { jobId: job_id });
+    info!("Finished job with error {}", err);
     let result = set_error(job_id, err).await;
     if result.is_err() {
         return;
@@ -99,7 +101,7 @@ async fn error(job_id: &str, callback_uri: &Option<String>, client: &reqwest::Cl
         if let Ok(dto) = dto {
             let result = client.post(callback_uri).json::<TransformJobDto>(&dto).send().await;
             if let Err(err) = result {
-                info!("Error sending error callback '{}' to '{}', because of {}", &job_id, callback_uri, err, { jobId: job_id });
+                info!("Error sending error callback to '{}', because of {}", callback_uri, err);
             }
         }
     }

@@ -1,9 +1,9 @@
 use bson::{doc, oid::ObjectId, DateTime};
 use futures::{AsyncRead, Stream};
-use kv_log_macro::warn;
 use mime::Mime;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
+use tracing::warn;
 use std::{env, path::PathBuf, str::FromStr, time::Duration};
 use tokio::fs;
 
@@ -49,10 +49,10 @@ pub async fn store_result_file(job_id: &str, token: &str, file_name: &str, mime_
     let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
     let file_result = files.update_one(doc! { "_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"token": token, "mimeType": mime_type}}, None);
     if file_result.await.is_err() {
-        warn!("Could not set uploadDate for chunks of {}.", &file_id, {fileId: &file_id, jobId: &job_id});
+        warn!("Could not set uploadDate for chunks of {}.", &file_id);
     }
     if chunks_result.await.is_err() {
-        warn!("Could not set job for file {}.", &file_id, {fileId: &file_id, jobId: &job_id});
+        warn!("Could not set job for file {}.", &file_id);
     }
     Ok(file_id)
 }

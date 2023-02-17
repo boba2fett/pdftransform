@@ -6,9 +6,9 @@ use crate::{
     models::{Document, Part, Rotation, TransformDocumentResult},
     consts::{PDFIUM}, routes::files::file_route,
 };
-use kv_log_macro::info;
 use mime::Mime;
 use pdfium_render::prelude::*;
+use tracing::info;
 use wait_timeout::ChildExt;
 
 pub fn init_pdfium() -> Pdfium {
@@ -45,16 +45,16 @@ pub async fn get_transformation<'a>(
                             else {
                                 let source_doc = if source_file.content_type != mime::APPLICATION_PDF {
                                     let source_path = load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
-                                    info!("Converted {} from libre '{}'", source_path.display(), &job_id, { jobId: job_id });
+                                    info!("Converted {} from libre", source_path.display());
                                     pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
                                 } else {
                                     pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
                                 };
-                                info!("source {} has {} pages '{}'", &source_file.id, source_doc.pages().len(), &job_id, { jobId: job_id });
+                                info!("source {} has {} pages", &source_file.id, source_doc.pages().len());
                                 *cache_ref = Some((&part.source_file, source_doc));
                                 add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                             }
-                            info!("generated {} has {} pages '{}'", &document.id, new_doc.pages().len(), &job_id, { jobId: job_id });
+                            info!("generated {} has {} pages", &document.id, new_doc.pages().len());
                         }
                     }
                     for attachment in &document.attachments {
@@ -64,7 +64,7 @@ pub async fn get_transformation<'a>(
                     new_doc.save_to_bytes().map_err(|_| "Could not save file.")?
                 };
                 Ok(async move {
-                    info!("generated {} is {} KiB '{}'", &document.id, bytes.len()/1024, &job_id, { jobId: job_id });
+                    info!("generated {} is {} KiB", &document.id, bytes.len()/1024);
                     let file_id = store_result_file(&job_id, &token, &document.id, Some("application/pdf"), &*bytes).await?;
 
                     Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {

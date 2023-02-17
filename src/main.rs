@@ -1,12 +1,12 @@
 use axum::Router;
 use axum::error_handling::HandleErrorLayer;
-use kv_log_macro::info;
 use pdftransform::consts::{PARALLELISM, PDFIUM, MONGO_CLIENT};
 use pdftransform::{persistence, files};
 use pdftransform::routes;
 use pdftransform::transform::{init_pdfium, check_libre};
 use reqwest::StatusCode;
 use tower_http::trace::TraceLayer;
+use tracing::info;
 use std::env;
 use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 use std::time::Duration;
@@ -14,8 +14,8 @@ use tower::{timeout::TimeoutLayer, ServiceBuilder};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().json().finish();
-    json_env_logger2::init();
+    let subscriber = tracing_subscriber::fmt().json().finish();
+    tracing::subscriber::set_global_default(subscriber).expect("Could not init tracing.");
     setup_expire_time().await;
     setup_parallelism();
     setup_pdfium();

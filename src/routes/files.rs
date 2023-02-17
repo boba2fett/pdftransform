@@ -10,7 +10,7 @@ pub fn create_route() -> Router {
         .route("/file/:file_id", get(file))
 }
 
-#[tracing::instrument]
+#[tracing::instrument(skip(params))]
 pub async fn file(Path(file_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
     if let Ok(file) = get_result_file(&token, &file_id).await {
