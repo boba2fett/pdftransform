@@ -3,3 +3,4 @@ pub mod health;
 pub mod serialize;
 pub mod stream;
 pub mod state;
+pub mod random;
