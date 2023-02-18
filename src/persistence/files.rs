@@ -16,8 +16,6 @@ use super::MongoPersistenceBase;
 const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
 
-trait NewTrait:  {}
-
 #[async_trait::async_trait]
 pub trait FileStorage {
     async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, StreamReader<dyn Stream<Item = Vec<u8>> + Unpin>), &'static str>;
