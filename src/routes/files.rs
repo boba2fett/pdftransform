@@ -1,19 +1,19 @@
 use std::collections::HashMap;
-use axum::{routing::get, body::{StreamBody}, response::{AppendHeaders, IntoResponse}};
+use axum::{routing::get, body::{StreamBody}, response::{AppendHeaders, IntoResponse}, extract::State};
 use reqwest::{StatusCode, header};
 use tokio_util::io::{ReaderStream};
-use crate::{files::get_result_file, util::stream::StreamReader};
+use crate::{util::{stream::StreamReader, state::FileStorageState}};
 use axum::{Router, extract::{Path, Query}};
 
-pub fn create_route() -> Router {
+pub fn create_route(storage: FileStorageState) -> Router {
     Router::new()
         .route("/file/:file_id", get(file))
+        .with_state(storage)
 }
 
-#[tracing::instrument(skip(params))]
-pub async fn file(Path(file_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+pub async fn file(Path(file_id): Path<String>, Query(params): Query<HashMap<String, String>>, State(state): State<FileStorageState>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
-    if let Ok(file) = get_result_file(&token, &file_id).await {
+    if let Ok(file) = state.get_result_file(&token, &file_id).await {
         let mime = &file.0;
         let file = StreamReader {
             stream: file.1,

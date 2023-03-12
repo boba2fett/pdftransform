@@ -1,6 +1,6 @@
 use bson::{doc, oid::ObjectId};
-use mongodb::bson::DateTime;
-use std::str::FromStr;
+use mongodb::{bson::DateTime, Collection};
+use std::{str::FromStr, sync::Arc};
 
 use crate::{
     models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel}, routes::transform::transform_job_route, util::random::generate_30_alphanumeric,
@@ -9,7 +9,7 @@ use crate::{
 use super::MongoPersistenceBase;
 
 #[async_trait::async_trait]
-pub trait TransformPersistence {
+pub trait TransformPersistence: Send + Sync {
     async fn get_transform_job_dto(&self, job_id: &String, token: &str) -> Result<TransformJobDto, &'static str>;
     async fn _get_transform_job_dto(&self, job_id: &str) -> Result<TransformJobDto, &'static str>;
     async fn get_transform_job_model(&self, job_id: &str, token: &str) -> Result<TransformJobModel, &'static str>;
@@ -18,12 +18,12 @@ pub trait TransformPersistence {
     async fn save_new_transform_job(&self, job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
 }
 
-pub struct MongoTransformPersistence<'a> {
-    base: &'a MongoPersistenceBase,
+pub struct MongoTransformPersistence {
+    base: Arc<MongoPersistenceBase>,
 }
 
 #[async_trait::async_trait]
-impl<'a> TransformPersistence for MongoTransformPersistence<'a> {
+impl TransformPersistence for MongoTransformPersistence {
 
     async fn get_transform_job_dto(&self, job_id: &String, token: &str) -> Result<TransformJobDto, &'static str> {
         let job_model = self.get_transform_job_model(&job_id, &token).await?;
@@ -54,7 +54,7 @@ impl<'a> TransformPersistence for MongoTransformPersistence<'a> {
     }
 
     async fn get_transform_job_model(&self, job_id: &str, token: &str) -> Result<TransformJobModel, &'static str> {
-        let jobs = self.base.get_transformations();
+        let jobs = self.get_transformations();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs.find_one(Some(doc! {"_id": id, "token": token}), None).await {
                 if let Some(job_model) = result {
@@ -66,7 +66,7 @@ impl<'a> TransformPersistence for MongoTransformPersistence<'a> {
     }
 
     async fn _get_transform_job_model(&self, job_id: &str) -> Result<TransformJobModel, &'static str> {
-        let jobs = self.base.get_transformations();
+        let jobs = self.get_transformations();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs.find_one(Some(doc!("_id": id)), None).await {
                 if let Some(job_model) = result {
@@ -93,7 +93,7 @@ impl<'a> TransformPersistence for MongoTransformPersistence<'a> {
     }
 
     async fn save_new_transform_job(&self, job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
-        let jobs = self.base.get_transformations();
+        let jobs = self.get_transformations();
         let job_clone = job.clone();
         if let Ok(insert_result) = jobs.insert_one(job, None).await {
             let id = insert_result.inserted_id.as_object_id().unwrap();
@@ -112,5 +112,11 @@ impl<'a> TransformPersistence for MongoTransformPersistence<'a> {
             ));
         }
         Err("Could not save job")
+    }
+}
+
+impl MongoTransformPersistence {
+    fn get_transformations(&self) -> Collection<TransformJobModel> {
+        self.base.get_jobs()
     }
 }

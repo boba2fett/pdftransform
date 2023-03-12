@@ -56,6 +56,27 @@ pub struct PreviewJobModel {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct BaseJobModel {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub callback_uri: Option<String>,
+    pub created: DateTime,
+    pub status: JobStatus,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseJobDto {
+    pub id: String,
+    pub callback_uri: Option<String>,
+    pub created: DateTime,
+    pub status: JobStatus,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct DummyModel {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,

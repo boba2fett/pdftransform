@@ -1,17 +1,16 @@
-use std::{path::{PathBuf, Path}, process::Command, time::Duration};
+use std::{path::{PathBuf, Path}, process::Command, time::Duration, sync::Arc};
 
 use crate::{
     download::DownloadedSourceFile,
-    files::{store_result_file, TempJobFileProvider},
-    models::{Document, Part, Rotation, TransformDocumentResult}, util::consts::PDFIUM, routes::files::file_route,
+    models::{Document, Part, Rotation, TransformDocumentResult}, routes::files::file_route, persistence::files::{TempJobFileProvider, FileStorage},
 };
 use mime::Mime;
 use pdfium_render::prelude::*;
 use tracing::info;
 use wait_timeout::ChildExt;
 
-pub fn init_pdfium() -> Pdfium {
-    Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap())
+pub fn init_pdfium() -> Result<Pdfium, &'static str> {
+    Ok(Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).map_err(|_| "Could not init pdfium")?))
 }
 
 const LIBRE: &str = "/usr/bin/soffice";
@@ -20,11 +19,25 @@ pub fn check_libre() -> bool {
     Path::new("/usr/lib/libreoffice/program").exists()
 }
 
-pub async fn get_transformation<'a>(
-    job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider
+#[async_trait::async_trait]
+pub trait TransformService: Send + Sync {
+    async fn get_transformation<'a>(
+        &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider
+    ) -> Result<Vec<TransformDocumentResult>, &'static str>;
+}
+
+pub struct PdfiumLibreTransformService {
+    storage: Arc<dyn FileStorage>,
+    pdfium: Arc<Pdfium>,
+}
+
+#[async_trait::async_trait]
+impl TransformService for PdfiumLibreTransformService {
+    
+async fn get_transformation<'a>(
+    &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider
 ) -> Result<Vec<TransformDocumentResult>, &'static str> {
     let results: Vec<_> = {
-        let pdfium = unsafe { PDFIUM.as_ref().unwrap() };
         let mut cache: Option<(&str, PdfDocument)> = None;
 
         documents
@@ -32,26 +45,26 @@ pub async fn get_transformation<'a>(
             .map(|document| -> Result<_, &'static str> {
                 let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
                 let bytes = {
-                    let mut new_doc = pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
+                    let mut new_doc = self.pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
                     for part in &document.parts {
                         if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
-                            add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                            self.add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                         } else {
                             let source_file = source_files.iter().find(|source_file| source_file.id.eq(&part.source_file)).ok_or("Could not find corresponding source file.")?;
-                            if is_supported_image(&source_file.content_type) {
-                                add_image(&mut new_doc, &source_file, &part)?;
+                            if self.is_supported_image(&source_file.content_type) {
+                                self.add_image(&mut new_doc, &source_file, &part)?;
                             }
                             else {
                                 let source_doc = if source_file.content_type != mime::APPLICATION_PDF {
-                                    let source_path = load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
+                                    let source_path = self.load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
                                     info!("Converted {} from libre", source_path.display());
-                                    pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
+                                    self.pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
                                 } else {
-                                    pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
+                                    self.pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
                                 };
                                 info!("source {} has {} pages", &source_file.id, source_doc.pages().len());
                                 *cache_ref = Some((&part.source_file, source_doc));
-                                add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
+                                self.add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
                             }
                             info!("generated {} has {} pages", &document.id, new_doc.pages().len());
                         }
@@ -64,7 +77,7 @@ pub async fn get_transformation<'a>(
                 };
                 Ok(async move {
                     info!("generated {} is {} KiB", &document.id, bytes.len()/1024);
-                    let file_id = store_result_file(&job_id, &token, &document.id, Some("application/pdf"), &*bytes).await?;
+                    let file_id = self.storage.store_result_file(&job_id, &token, &document.id, Some("application/pdf"), Box::new(&*bytes)).await?;
 
                     Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
                         download_url: file_route(&file_id, token),
@@ -81,11 +94,13 @@ pub async fn get_transformation<'a>(
     }
     Ok(document_results)
 }
+}
 
-pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
+impl PdfiumLibreTransformService {
+fn add_part(&self, new_document: &mut PdfDocument, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
     let start_page_number = part.start_page_number.unwrap_or(1);
     let end_page_number = part.end_page_number.unwrap_or(source_document.pages().len());
-    validate_pages(start_page_number, end_page_number, source_document)?;
+    self.validate_pages(start_page_number, end_page_number, source_document)?;
 
     let new_start_page_number = new_document.pages().len() + 1;
     let new_end_page_number = new_start_page_number + (end_page_number - start_page_number);
@@ -95,12 +110,12 @@ pub fn add_part(new_document: &mut PdfDocument, source_document: &PdfDocument, p
         .copy_page_range_from_document(&source_document, start_page_number - 1..=end_page_number - 1, new_start_page_number - 1)
         .map_err(|_| "Could not transfer pages.")?;
 
-    turn_pages(new_start_page_number, new_end_page_number, new_document, part)?;
+    self.turn_pages(new_start_page_number, new_end_page_number, new_document, part)?;
 
     Ok(())
 }
 
-pub fn add_image(new_document: &mut PdfDocument, source_file: &DownloadedSourceFile, part: &Part) -> Result<(), &'static str> {
+fn add_image(&self, new_document: &mut PdfDocument, source_file: &DownloadedSourceFile, part: &Part) -> Result<(), &'static str> {
     let source_img = image::io::Reader::open(&source_file.path).map_err(|_|"")?.with_guessed_format().map_err(|_|"")?.decode().map_err(|_|"")?;
     
     let source_img =  {
@@ -126,7 +141,7 @@ pub fn add_image(new_document: &mut PdfDocument, source_file: &DownloadedSourceF
     Ok(())
 }
 
-fn validate_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument) -> Result<(), &'static str> {
+fn validate_pages(&self, start_page_number: u16, end_page_number: u16, source_document: &PdfDocument) -> Result<(), &'static str> {
     if start_page_number > end_page_number {
         return Err("Start page number can't be greater than end page number.");
     }
@@ -137,7 +152,7 @@ fn validate_pages(start_page_number: u16, end_page_number: u16, source_document:
     Ok(())
 }
 
-fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
+fn turn_pages(&self, start_page_number: u16, end_page_number: u16, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
     if part.rotation.is_some() {
         let part_rotation: i32 = part.rotation.unwrap_or(Rotation::P0).as_degrees();
         let part_rotation: i32 = {
@@ -167,14 +182,14 @@ fn turn_pages(start_page_number: u16, end_page_number: u16, source_document: &Pd
     Ok(())
 }
 
-pub fn is_supported_image(content_type: &Mime) -> bool {
+fn is_supported_image(&self, content_type: &Mime) -> bool {
     content_type.eq(&mime::IMAGE_PNG)
       || content_type.eq(&mime::IMAGE_JPEG)
       || content_type.eq(&mime::IMAGE_GIF)
       || content_type.eq(&mime::IMAGE_BMP)
 }
 
-pub fn load_from_libre(source: &PathBuf, source_mime_type: &Mime, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
+fn load_from_libre(&self, source: &PathBuf, source_mime_type: &Mime, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
     let result_path = job_files.get_path();
     std::fs::create_dir_all(&result_path).unwrap();
     let output = &result_path.as_os_str();
@@ -202,4 +217,5 @@ pub fn load_from_libre(source: &PathBuf, source_mime_type: &Mime, job_files: &Te
         Some(0) => Ok(result_path),
         _ => Err("Something went wrong"),
     }
+}
 }

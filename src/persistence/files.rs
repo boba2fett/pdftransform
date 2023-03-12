@@ -4,11 +4,11 @@ use mime::Mime;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
 use tracing::warn;
-use std::{env, path::PathBuf, str::FromStr, time::Duration};
+use std::{env, path::PathBuf, str::FromStr, time::Duration, sync::Arc};
 use tokio::fs;
 
 use crate::{
-    models::{DummyModel, FileModel}, util::{consts, random::generate_30_alphanumeric, stream::StreamReader},
+    models::{DummyModel, FileModel}, util::{consts, random::generate_30_alphanumeric},
 };
 
 use super::MongoPersistenceBase;
@@ -17,23 +17,31 @@ const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
 
 #[async_trait::async_trait]
-pub trait FileStorage {
-    async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, StreamReader<dyn Stream<Item = Vec<u8>> + Unpin>), &'static str>;
-    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: impl AsyncRead + Unpin + Send) -> Result<String, &'static str>;
+pub trait FileStorage: Send + Sync {
+    async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str>;
+    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Box<dyn AsyncRead + Unpin + Send>) -> Result<String, &'static str>;
 }
 
-pub struct GridFSFileStorage<'a> {
-    base: &'a MongoPersistenceBase,
+pub struct GridFSFileStorage {
+    base: Arc<MongoPersistenceBase>,
 }
 
-impl<'a> GridFSFileStorage<'a> {
+impl GridFSFileStorage {
     fn get_bucket(&self) -> GridFSBucket {
         let client = self.base.get_mongo_client();
         let db = client.database(&consts::NAME);
         GridFSBucket::new(db, Some(GridFSBucketOptions::default()))
     }
 
-    pub async fn set_expire_after(&self, seconds: u64) -> Result<(), Error> {
+    pub async fn build(base: Arc<MongoPersistenceBase>, expire_seconds: u64) -> Result<Self, &'static str> {
+        let oneself = GridFSFileStorage {
+            base,
+        };
+        oneself.set_expire_after(expire_seconds).await.map_err(|_| "Cloud not set expire time")?;
+        Ok(oneself)
+    }
+
+    async fn set_expire_after(&self, seconds: u64) -> Result<(), Error> {
         let client = self.base.get_mongo_client();
         let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
         let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
@@ -58,22 +66,18 @@ impl<'a> GridFSFileStorage<'a> {
 }
 
 #[async_trait::async_trait]
-impl<'a> FileStorage for GridFSFileStorage<'a> {
+impl FileStorage for GridFSFileStorage {
 
-    async fn get_result_file<S>(&self, token: &str, file_id: &str) -> Result<(Mime, StreamReader<S>), &'static str>
+    async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str>
     {
         let file_model = self.validate(token, file_id).await?;
         let mime_type = file_model.get_content_type();
         let bucket = self.get_bucket();
         let cursor  = bucket.open_download_stream(file_model.id.unwrap()).await.map_err(|_| "Could not find file.")?;
-        let stream = StreamReader {
-            stream: cursor,
-            buffer: vec![]
-        };
-        Ok((mime_type, stream))
+        Ok((mime_type, Box::new(cursor)))
     }
 
-    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: impl AsyncRead + Unpin + Send) -> Result<String, &'static str> {
+    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Box<dyn AsyncRead + Unpin + Send>) -> Result<String, &'static str> {
         let client = self.base.get_mongo_client();
         let mut bucket = self.get_bucket();
         let file_id = bucket.upload_from_stream(file_name, source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
