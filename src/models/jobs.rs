@@ -1,9 +1,9 @@
-use std::{path::Path, str::FromStr};
-use mime::Mime;
 use bson::oid::ObjectId;
+use mime::Mime;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::{path::Path, str::FromStr};
 
 use super::{
     transform::{Document, SourceFile, TransformDocumentResult},
@@ -126,8 +126,8 @@ impl FileModel {
                     "jpg" => mime::IMAGE_JPEG,
                     "jpeg" => mime::IMAGE_JPEG,
                     "bmp" => mime::IMAGE_BMP,
-                    _ => mime::APPLICATION_OCTET_STREAM
-                }
+                    _ => mime::APPLICATION_OCTET_STREAM,
+                };
             }
         }
         mime::APPLICATION_OCTET_STREAM

@@ -3,12 +3,13 @@ use futures::Stream;
 use mime::Mime;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
-use tracing::warn;
-use std::{env, path::PathBuf, str::FromStr, time::Duration, sync::Arc};
+use std::{env, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
 use tokio::fs;
+use tracing::warn;
 
 use crate::{
-    models::{DummyModel, FileModel}, util::{consts, random::generate_30_alphanumeric},
+    models::{DummyModel, FileModel},
+    util::{consts, random::generate_30_alphanumeric},
 };
 
 use super::MongoPersistenceBase;
@@ -34,9 +35,7 @@ impl GridFSFileStorage {
     }
 
     pub async fn build(base: Arc<MongoPersistenceBase>, expire_seconds: u64) -> Result<Self, &'static str> {
-        let oneself = GridFSFileStorage {
-            base,
-        };
+        let oneself = GridFSFileStorage { base };
         oneself.set_expire_after(expire_seconds).await.map_err(|_| "Cloud not set expire time")?;
         Ok(oneself)
     }
@@ -67,13 +66,11 @@ impl GridFSFileStorage {
 
 #[async_trait::async_trait]
 impl FileStorage for GridFSFileStorage {
-
-    async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str>
-    {
+    async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str> {
         let file_model = self.validate(token, file_id).await?;
         let mime_type = file_model.get_content_type();
         let bucket = self.get_bucket();
-        let cursor  = bucket.open_download_stream(file_model.id.unwrap()).await.map_err(|_| "Could not find file.")?;
+        let cursor = bucket.open_download_stream(file_model.id.unwrap()).await.map_err(|_| "Could not find file.")?;
         Ok((mime_type, Box::new(cursor)))
     }
 
@@ -93,8 +90,6 @@ impl FileStorage for GridFSFileStorage {
         }
         Ok(file_id)
     }
-
-    
 }
 
 #[async_trait::async_trait]

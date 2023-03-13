@@ -1,9 +1,14 @@
 use image::ImageFormat;
-use pdfium_render::{prelude::{PdfDocument, Pdfium}, render_config::PdfRenderConfig};
+use pdfium_render::{
+    prelude::{PdfDocument, Pdfium},
+    render_config::PdfRenderConfig,
+};
 use std::{io::Cursor, sync::Arc};
 
 use crate::{
-    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature}, routes::files::file_route, persistence::files::FileStorage,
+    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
+    persistence::files::FileStorage,
+    routes::files::file_route,
 };
 
 #[async_trait::async_trait]
@@ -87,7 +92,6 @@ impl PreviewService for PdfiumPreviewService {
 }
 
 impl PdfiumPreviewService {
-
     fn is_protected(&self, document: &PdfDocument) -> Result<bool, &'static str> {
         let permissions = document.permissions();
         let protected = !permissions.can_add_or_modify_text_annotations().map_err(|_| "Could not determine permissions.")?

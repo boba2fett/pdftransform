@@ -3,7 +3,9 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel}, routes::preview::preview_job_route, util::random::generate_30_alphanumeric,
+    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel},
+    routes::preview::preview_job_route,
+    util::random::generate_30_alphanumeric,
 };
 
 use super::MongoPersistenceBase;
@@ -24,7 +26,6 @@ pub struct MongoPreviewPersistence {
 
 #[async_trait::async_trait]
 impl PreviewPersistence for MongoPreviewPersistence {
-
     async fn get_preview_job_dto(&self, job_id: &String, token: &str) -> Result<PreviewJobDto, &'static str> {
         let job_model = self.get_preview_job_model(&job_id, &token).await?;
         let job_id = job_model.id.unwrap().to_string();

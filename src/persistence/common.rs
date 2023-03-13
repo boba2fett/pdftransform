@@ -2,20 +2,19 @@ use bson::{doc, oid::ObjectId, Bson};
 use futures::StreamExt;
 use mongodb::{
     bson::DateTime,
+    error::Error,
     options::{ClientOptions, IndexOptions},
-    Client, Collection, IndexModel, error::Error,
+    Client, Collection, IndexModel,
 };
 use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
 use crate::{
+    models::{AvgTimeModel, BaseJobDto, BaseJobModel, DummyModel, JobStatus},
     util::consts::NAME,
-    models::{AvgTimeModel, DummyModel, JobStatus, BaseJobModel, BaseJobDto},
 };
 
-trait Serializable: Serialize + Send + Sync {
-
-}
+trait Serializable: Serialize + Send + Sync {}
 
 #[async_trait::async_trait]
 pub trait JobsBasePersistence: Send + Sync {
@@ -34,7 +33,7 @@ impl MongoPersistenceBase {
     pub async fn build(mongo_uri: &str, expire_seconds: u64) -> Result<Self, &'static str> {
         let options = ClientOptions::parse(&mongo_uri).await.map_err(|_| "Cloud not create mongo client")?;
         let oneself = MongoPersistenceBase {
-            mongo_client: Client::with_options(options).map_err(|_| "Cloud not create mongo client")?
+            mongo_client: Client::with_options(options).map_err(|_| "Cloud not create mongo client")?,
         };
         oneself.set_expire_after(expire_seconds).await.map_err(|_| "Cloud not set expire time")?;
         Ok(oneself)
@@ -63,7 +62,8 @@ impl MongoPersistenceBase {
 #[async_trait::async_trait]
 impl JobsBasePersistence for MongoPersistenceBase {
     async fn jobs_health(&self) -> Result<Vec<AvgTimeModel>, &'static str> {
-        let cursor = self.get_jobs::<DummyModel>()
+        let cursor = self
+            .get_jobs::<DummyModel>()
             .aggregate(
                 [
                     doc! {
@@ -111,8 +111,7 @@ impl JobsBasePersistence for MongoPersistenceBase {
         Ok(results)
     }
 
-    async fn set_ready(&self, job_id: &str, results_bson: Bson) -> Result<(), &'static str> 
-    {
+    async fn set_ready(&self, job_id: &str, results_bson: Bson) -> Result<(), &'static str> {
         let jobs = self.get_jobs::<DummyModel>();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs

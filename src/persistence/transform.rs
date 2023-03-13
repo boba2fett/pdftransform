@@ -3,7 +3,9 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel}, routes::transform::transform_job_route, util::random::generate_30_alphanumeric,
+    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel},
+    routes::transform::transform_job_route,
+    util::random::generate_30_alphanumeric,
 };
 
 use super::MongoPersistenceBase;
@@ -24,7 +26,6 @@ pub struct MongoTransformPersistence {
 
 #[async_trait::async_trait]
 impl TransformPersistence for MongoTransformPersistence {
-
     async fn get_transform_job_dto(&self, job_id: &String, token: &str) -> Result<TransformJobDto, &'static str> {
         let job_model = self.get_transform_job_model(&job_id, &token).await?;
         let job_id = job_model.id.unwrap().to_string();
@@ -40,7 +41,7 @@ impl TransformPersistence for MongoTransformPersistence {
     }
 
     async fn _get_transform_job_dto(&self, job_id: &str) -> Result<TransformJobDto, &'static str> {
-        let job_model = self._get_transform_job_model( &job_id).await?;
+        let job_model = self._get_transform_job_model(&job_id).await?;
         let job_id = job_model.id.unwrap().to_string();
         Ok(TransformJobDto {
             message: job_model.message,
