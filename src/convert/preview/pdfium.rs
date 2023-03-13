@@ -12,8 +12,8 @@ pub trait PreviewService: Send + Sync {
 }
 
 pub struct PdfiumPreviewService {
-    storage: Arc<dyn FileStorage>,
-    pdfium: Arc<Pdfium>,
+    pub storage: Arc<dyn FileStorage>,
+    pub pdfium: Arc<Pdfium>,
 }
 
 #[async_trait::async_trait]
@@ -40,7 +40,7 @@ impl PreviewService for PdfiumPreviewService {
                     let text = page.text().map_err(|_| "")?.all();
 
                     Ok(async move {
-                        let file_id = self.storage.store_result_file(&job_id, &token, &page_number, Some("image/jpeg"), Box::new(&*bytes)).await?;
+                        let file_id = self.storage.store_result_file(&job_id, &token, &page_number, Some("image/jpeg"), bytes).await?;
                         Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                             download_url: file_route(&file_id, &token),
                             text,
@@ -56,7 +56,7 @@ impl PreviewService for PdfiumPreviewService {
                     let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
 
                     Ok(async move {
-                        let file_id = self.storage.store_result_file(&job_id, &token, &name, None, Box::new(&*bytes)).await?;
+                        let file_id = self.storage.store_result_file(&job_id, &token, &name, None, bytes).await?;
                         Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                             name,
                             download_url: file_route(&file_id, &token),

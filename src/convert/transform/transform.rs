@@ -27,8 +27,8 @@ pub trait TransformService: Send + Sync {
 }
 
 pub struct PdfiumLibreTransformService {
-    storage: Arc<dyn FileStorage>,
-    pdfium: Arc<Pdfium>,
+    pub storage: Arc<dyn FileStorage>,
+    pub pdfium: Arc<Pdfium>,
 }
 
 #[async_trait::async_trait]
@@ -77,7 +77,7 @@ async fn get_transformation<'a>(
                 };
                 Ok(async move {
                     info!("generated {} is {} KiB", &document.id, bytes.len()/1024);
-                    let file_id = self.storage.store_result_file(&job_id, &token, &document.id, Some("application/pdf"), Box::new(&*bytes)).await?;
+                    let file_id = self.storage.store_result_file(&job_id, &token, &document.id, Some("application/pdf"), bytes).await?;
 
                     Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
                         download_url: file_route(&file_id, token),

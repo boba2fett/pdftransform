@@ -1,5 +1,5 @@
 use bson::{doc, oid::ObjectId, DateTime};
-use futures::{AsyncRead, Stream};
+use futures::Stream;
 use mime::Mime;
 use mongodb::{error::Error, options::IndexOptions, IndexModel};
 use mongodb_gridfs::{options::GridFSBucketOptions, GridFSBucket};
@@ -19,7 +19,7 @@ const CHUNKS_COLLECTION: &str = "fs.chunks";
 #[async_trait::async_trait]
 pub trait FileStorage: Send + Sync {
     async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str>;
-    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Box<dyn AsyncRead + Unpin + Send>) -> Result<String, &'static str>;
+    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Vec<u8>) -> Result<String, &'static str>;
 }
 
 pub struct GridFSFileStorage {
@@ -77,10 +77,10 @@ impl FileStorage for GridFSFileStorage {
         Ok((mime_type, Box::new(cursor)))
     }
 
-    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Box<dyn AsyncRead + Unpin + Send>) -> Result<String, &'static str> {
+    async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Vec<u8>) -> Result<String, &'static str> {
         let client = self.base.get_mongo_client();
         let mut bucket = self.get_bucket();
-        let file_id = bucket.upload_from_stream(file_name, source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
+        let file_id = bucket.upload_from_stream(file_name, &*source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
         let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
         let chunks_result = chunks.update_many(doc! { "files_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"uploadDate": DateTime::now()}}, None);
         let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);

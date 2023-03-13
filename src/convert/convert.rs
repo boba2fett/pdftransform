@@ -19,12 +19,12 @@ pub trait ConvertService: Send + Sync {
 }
 
 pub struct ConvertServiceImpl {
-    base_presistence: Arc<dyn JobsBasePersistence>,
-    transform_persistence: Arc<dyn TransformPersistence>,
-    preview_persistence: Arc<dyn PreviewPersistence>,
-    preview_service: Arc<dyn PreviewService>,
-    transform_service: Arc<dyn TransformService>,
-    download_service: Arc<dyn DownloadService>,
+    pub base_presistence: Arc<dyn JobsBasePersistence>,
+    pub transform_persistence: Arc<dyn TransformPersistence>,
+    pub preview_persistence: Arc<dyn PreviewPersistence>,
+    pub preview_service: Arc<dyn PreviewService>,
+    pub transform_service: Arc<dyn TransformService>,
+    pub download_service: Arc<dyn DownloadService>,
 }
 
 #[async_trait::async_trait]
@@ -46,7 +46,7 @@ async fn process_transform_job(&self, job_id: String, job_model: Option<Transfor
                 let source_files: Vec<&DownloadedSourceFile> = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
                 let results: Result<_, &str> = self.transform_service.get_transformation(&job_id, &job_model.token, &job_model.documents, source_files, &job_files).await;
                 match results {
-                    Ok(results) => self.ready(&job_id, &job_model.callback_uri, &client, results, |job_id| self.transform_persistence._get_transform_job_dto(job_id)).await,
+                    Ok(results) => self.ready(&job_id, &job_model.callback_uri, &client, results, |self, job_id| self.transform_persistence._get_transform_job_dto(job_id)).await,
                     Err(err) => self.error( &job_id, &job_model.callback_uri, &client, err).await,
                 };
             }
@@ -71,7 +71,7 @@ async fn process_preview_job(&self, job_id: String, job_model: Option<PreviewJob
             Ok(source_file) => {
                 let result: Result<_, &str> = self.preview_service.get_preview(&job_id, &job_model.token, source_file.to_vec()).await;
                 match result {
-                    Ok(result) => self.ready(&job_id, &job_model.callback_uri, &client, result, |job_id| self.preview_persistence._get_preview_job_dto(job_id)).await,
+                    Ok(result) => self.ready(&job_id, &job_model.callback_uri, &client, result, |self, job_id| self.preview_persistence._get_preview_job_dto(job_id)).await,
                     Err(err) => self.error(&job_id, &job_model.callback_uri, &client, err).await,
                 };
             }
@@ -86,10 +86,10 @@ async fn process_preview_job(&self, job_id: String, job_model: Option<PreviewJob
 
 impl ConvertServiceImpl {
     async fn ready<'a, 'b, ResultType: Serialize, JobType: Serialize + Sized, F, Fut>(
-        &self, job_id: &'b str, callback_uri: &Option<String>, client: &reqwest::Client, result: ResultType, job_fn: F,
+        &'b self, job_id: &'b str, callback_uri: &Option<String>, client: &reqwest::Client, result: ResultType, job_fn: F,
     ) where
         F: Send + 'static,
-        F: FnOnce(&'b str) -> Fut,
+        F: FnOnce(&'b Self, &'b str) -> Fut,
         Fut: Future<Output = Result<JobType, &'static str>> + Send,
     {
         info!("Finished job");
@@ -100,7 +100,7 @@ impl ConvertServiceImpl {
             return;
         }
         if let Some(callback_uri) = callback_uri {
-            let dto = job_fn(&job_id).await;
+            let dto = job_fn(self, &job_id).await;
             if let Ok(dto) = dto {
                 let result = client.post(callback_uri).json::<JobType>(&dto).send().await;
                 if let Err(err) = result {

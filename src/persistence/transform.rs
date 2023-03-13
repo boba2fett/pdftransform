@@ -19,7 +19,7 @@ pub trait TransformPersistence: Send + Sync {
 }
 
 pub struct MongoTransformPersistence {
-    base: Arc<MongoPersistenceBase>,
+    pub base: Arc<MongoPersistenceBase>,
 }
 
 #[async_trait::async_trait]

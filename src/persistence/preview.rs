@@ -19,7 +19,7 @@ pub trait PreviewPersistence: Send + Sync {
 }
 
 pub struct MongoPreviewPersistence {
-    base: Arc<MongoPersistenceBase>,
+    pub base: Arc<MongoPersistenceBase>,
 }
 
 #[async_trait::async_trait]
