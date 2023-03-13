@@ -1,4 +1,4 @@
-use std::{path::{PathBuf, Path}, process::Command, time::Duration, sync::Arc};
+use std::{path::{PathBuf, Path}, process::{Command, Stdio}, time::Duration, sync::Arc};
 
 use crate::{
     download::DownloadedSourceFile,
@@ -203,6 +203,7 @@ fn load_from_libre(&self, source: &PathBuf, source_mime_type: &Mime, job_files: 
         .arg(input)
         .arg("--outdir")
         .arg(output)
+        .stdout(Stdio::piped())
         .spawn().map_err(|_| "Could not start libre")?;
 
     let one_sec = Duration::from_secs(30);
@@ -215,7 +216,10 @@ fn load_from_libre(&self, source: &PathBuf, source_mime_type: &Mime, job_files: 
     };
     match status_code {
         Some(0) => Ok(result_path),
-        _ => Err("Something went wrong"),
+        _ => {
+            info!("Libre failed with '{:?}'", child.stdout);
+            Err("Something went wrong")
+        },
     }
 }
 }
