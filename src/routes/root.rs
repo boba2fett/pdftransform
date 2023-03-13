@@ -1,15 +1,16 @@
-use axum::routing::get;
-use axum::{Router, Json};
-use crate::health::get_health;
+use crate::util::health::get_metrics;
+use crate::util::state::JobsBasePersistenceState;
 use crate::{
-    consts::{NAME, VERSION},
-    models::{RootDto, RootLinks, HealthDto},
+    models::{MetricsDto, RootDto, RootLinks},
+    util::consts::{NAME, VERSION},
 };
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::routing::get;
+use axum::{Json, Router};
 
-pub fn create_route() -> Router {
-    Router::new()
-        .route("/", get(root_links))
-        .route("/health", get(health))
+pub fn create_route(jobs_base_persistence: JobsBasePersistenceState) -> Router {
+    Router::new().route("/", get(root_links)).route("/health", get(health)).route("/metrics", get(metrics)).with_state(jobs_base_persistence)
 }
 
 pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
@@ -23,9 +24,15 @@ pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
     }))
 }
 
-pub async fn health() -> Result<Json<HealthDto>, &'static str> {
-    match get_health().await {
-        Ok(health) => Ok(Json(health)),
+#[tracing::instrument]
+pub async fn health() -> StatusCode {
+    StatusCode::OK
+}
+
+#[tracing::instrument(skip(base_persistence))]
+pub async fn metrics(State(base_persistence): State<JobsBasePersistenceState>) -> Result<Json<MetricsDto>, &'static str> {
+    match get_metrics(base_persistence).await {
+        Ok(metrics) => Ok(Json(metrics)),
         Err(err) => Err(err),
     }
 }

@@ -1,9 +1,9 @@
-use std::{path::Path, str::FromStr};
-use mime::Mime;
 use bson::oid::ObjectId;
+use mime::Mime;
 use mongodb::bson::DateTime;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::{path::Path, str::FromStr};
 
 use super::{
     transform::{Document, SourceFile, TransformDocumentResult},
@@ -50,7 +50,29 @@ pub struct PreviewJobModel {
     pub message: Option<String>,
     pub callback_uri: Option<String>,
     pub source_uri: Option<String>,
+    pub source_mime_type: String,
     pub result: Option<PreviewResult>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseJobModel {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub callback_uri: Option<String>,
+    pub created: DateTime,
+    pub status: JobStatus,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseJobDto {
+    pub id: String,
+    pub callback_uri: Option<String>,
+    pub created: DateTime,
+    pub status: JobStatus,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -104,8 +126,8 @@ impl FileModel {
                     "jpg" => mime::IMAGE_JPEG,
                     "jpeg" => mime::IMAGE_JPEG,
                     "bmp" => mime::IMAGE_BMP,
-                    _ => mime::APPLICATION_OCTET_STREAM
-                }
+                    _ => mime::APPLICATION_OCTET_STREAM,
+                };
             }
         }
         mime::APPLICATION_OCTET_STREAM

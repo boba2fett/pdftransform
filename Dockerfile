@@ -23,6 +23,10 @@ RUN cargo build --release
 
 FROM debian:bullseye-slim
 
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install libreoffice-core-nogui libreoffice-java-common openjdk-17-jre-headless -y --no-install-recommends && \
+    apt-get clean && find /var/lib/apt/lists -type f -delete
+
 WORKDIR /pdftransform
 COPY --from=build /pdftransform/target/release/pdftransform .
 COPY --from=build /pdftransform/libpdfium.so .
