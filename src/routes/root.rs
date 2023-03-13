@@ -10,7 +10,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 
 pub fn create_route(jobs_base_persistence: JobsBasePersistenceState) -> Router {
-    Router::new().route("/", get(root_links)).route("/health", get(health)).route("/metrics", get(health)).with_state(jobs_base_persistence)
+    Router::new().route("/", get(root_links)).route("/health", get(health)).route("/metrics", get(metrics)).with_state(jobs_base_persistence)
 }
 
 pub async fn root_links() -> Result<Json<RootDto>, &'static str> {
