@@ -1,9 +1,7 @@
-use crate::util::health::get_metrics;
-use crate::util::state::JobsBasePersistenceState;
-use crate::{
-    models::{MetricsDto, RootDto, RootLinks},
-    util::consts::{NAME, VERSION},
-};
+use common::util::health::get_metrics;
+use crate::state::JobsBasePersistenceState;
+use common::models::{MetricsDto, RootDto, RootLinks};
+use common::util::consts::{NAME, VERSION};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::routing::get;

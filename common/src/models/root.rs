@@ -22,8 +22,6 @@ pub struct RootLinks {
 #[serde(rename_all = "camelCase")]
 pub struct MetricsDto {
     pub jobs: Vec<AvgTimeModel>,
-    pub file_handels: usize,
-    pub file_handel_limit: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

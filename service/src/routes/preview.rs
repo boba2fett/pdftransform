@@ -7,14 +7,13 @@ use axum::{
 };
 use axum::{Json, Router};
 use bytes::Bytes;
+use common::models::CreatePreviewJobDto;
+use common::util::random::generate_30_alphanumeric;
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use std::{collections::HashMap, sync::Arc};
 use tokio_stream::StreamExt;
 
-use crate::{
-    models::CreatePreviewJobDto,
-    util::{random::generate_30_alphanumeric, state::ServiceCollection},
-};
+use crate::state::ServiceCollection;
 
 pub fn create_route(services: Arc<ServiceCollection>) -> Router {
     Router::new()

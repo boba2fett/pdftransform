@@ -1,4 +1,3 @@
-use crate::util::{state::FileStorageState, stream::StreamReader};
 use axum::{
     body::StreamBody,
     extract::State,
@@ -9,9 +8,12 @@ use axum::{
     extract::{Path, Query},
     Router,
 };
+use common::util::stream::StreamReader;
 use reqwest::{header, StatusCode};
 use std::collections::HashMap;
 use tokio_util::io::ReaderStream;
+
+use crate::state::FileStorageState;
 
 pub fn create_route(storage: FileStorageState) -> Router {
     Router::new().route("/file/:file_id", get(file)).with_state(storage)

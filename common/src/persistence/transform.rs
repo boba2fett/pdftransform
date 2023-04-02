@@ -4,7 +4,7 @@ use std::{str::FromStr, sync::Arc};
 
 use crate::{
     models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel},
-    routes::transform::transform_job_route,
+    util::routes::transform_job_route,
     util::random::generate_30_alphanumeric,
 };
 

@@ -5,10 +5,10 @@ use pdfium_render::{
 };
 use std::{io::Cursor, sync::Arc};
 
-use crate::{
+use common::{
     models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
     persistence::files::FileStorage,
-    routes::files::file_route,
+    util::routes::file_route,
 };
 
 #[async_trait::async_trait]

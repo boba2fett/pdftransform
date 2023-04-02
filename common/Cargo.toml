@@ -1,0 +1,21 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bson = { version = "2.6.0", features = ["chrono-0_4"] }
+chrono = "0.4.24"
+serde = { version = "1.0.156", features = ["derive"] }
+serde_repr = "0.1.11"
+async-trait = "0.1.66"
+mongodb = "2.4.0"
+mongodb-gridfs = "0.2.4"
+tokio = { version = "1.26.0", features = ["fs"]}
+mime = "0.3.16"
+tracing = "0.1.37"
+futures = {version = "0.3.27"}
+rand = "0.8.5"
+base64 = "0.21.0"
+tokio-util = "0.7.7"
+tokio-stream = "0.1.12"

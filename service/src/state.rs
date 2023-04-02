@@ -1,20 +1,19 @@
 use pdfium_render::prelude::Pdfium;
 use std::sync::Arc;
 
-use crate::{
-    convert::{
-        preview::pdfium::{PdfiumPreviewService, PreviewService},
-        transform::PdfiumLibreTransformService,
-        ConvertService, ConvertServiceImpl,
-    },
-    download::DownloadServiceImpl,
+use common::{
     persistence::{
         files::{FileStorage, GridFSFileStorage},
         JobsBasePersistence, MongoPersistenceBase, MongoPreviewPersistence, MongoTransformPersistence,
     },
     persistence::{PreviewPersistence, TransformPersistence},
 };
-
+use worker::convert::{
+        preview::pdfium::{PdfiumPreviewService, PreviewService},
+        transform::PdfiumLibreTransformService,
+        ConvertService, ConvertServiceImpl,
+    };
+use worker::download::DownloadServiceImpl;
 pub type FileStorageState = Arc<dyn FileStorage + Sync + Send>;
 pub type PreviewPersistenceState = Arc<dyn PreviewPersistence + Sync + Send>;
 pub type TransformPersistenceState = Arc<dyn TransformPersistence + Sync + Send>;

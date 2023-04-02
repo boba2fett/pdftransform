@@ -4,7 +4,7 @@ use std::{str::FromStr, sync::Arc};
 
 use crate::{
     models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel},
-    routes::preview::preview_job_route,
+    util::routes::preview_job_route,
     util::random::generate_30_alphanumeric,
 };
 

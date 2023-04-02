@@ -8,7 +8,8 @@ use axum::{Json, Router};
 use reqwest::StatusCode;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{models::CreateTransformJobDto, util::state::ServiceCollection};
+use common::models::CreateTransformJobDto;
+use crate::state::ServiceCollection;
 
 pub fn create_route(services: Arc<ServiceCollection>) -> Router {
     Router::new().route("/transform/:job_id", get(transform_job)).route("/transform", post(create_transform_job)).with_state(services)

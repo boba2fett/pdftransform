@@ -5,11 +5,11 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    download::DownloadedSourceFile,
+use crate::download::DownloadedSourceFile;
+use common::{
     models::{Document, Part, Rotation, TransformDocumentResult},
     persistence::files::{FileStorage, TempJobFileProvider},
-    routes::files::file_route,
+    util::routes::file_route,
 };
 use mime::Mime;
 use pdfium_render::prelude::*;
