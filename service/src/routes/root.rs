@@ -1,6 +1,5 @@
-use common::util::health::get_metrics;
+use crate::dtos::root::{MetricsDto, RootDto, RootLinks};
 use crate::state::JobsBasePersistenceState;
-use common::models::{MetricsDto, RootDto, RootLinks};
 use common::util::consts::{NAME, VERSION};
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -29,8 +28,12 @@ pub async fn health() -> StatusCode {
 
 #[tracing::instrument(skip(base_persistence))]
 pub async fn metrics(State(base_persistence): State<JobsBasePersistenceState>) -> Result<Json<MetricsDto>, &'static str> {
-    match get_metrics(base_persistence).await {
-        Ok(metrics) => Ok(Json(metrics)),
+    match base_persistence.jobs_health().await {
+        Ok(jobs_health) => Ok(Json(
+            MetricsDto {
+                jobs: jobs_health
+            }
+        )),
         Err(err) => Err(err),
     }
 }
