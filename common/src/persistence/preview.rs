@@ -3,7 +3,7 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel, PreviewData},
+    models::{CreatePreviewJobModel, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel, PreviewData},
     util::routes::preview_job_route,
     util::random::generate_30_alphanumeric,
 };
@@ -16,7 +16,7 @@ pub trait PreviewPersistence: Send + Sync {
     async fn _get_preview_job_dto(&self, job_id: &str) -> Result<PreviewJobDto, &'static str>;
     async fn get_preview_job_model(&self, job_id: &str, token: &str) -> Result<PreviewJobModel, &'static str>;
     async fn _get_preview_job_model(&self, job_id: &str) -> Result<PreviewJobModel, &'static str>;
-    async fn create_new_preview_job(&self, create_job: CreatePreviewJobDto) -> Result<(PreviewJobDto, PreviewJobModel), &'static str>;
+    async fn create_new_preview_job(&self, create_job: CreatePreviewJobModel) -> Result<(PreviewJobDto, PreviewJobModel), &'static str>;
     async fn save_new_preview_job(&self, job: PreviewJobModel) -> Result<(PreviewJobDto, PreviewJobModel), &'static str>;
 }
 
@@ -78,7 +78,7 @@ impl PreviewPersistence for MongoPreviewPersistence {
         Err("Could not find job")
     }
 
-    async fn create_new_preview_job(&self, create_job: CreatePreviewJobDto) -> Result<(PreviewJobDto, PreviewJobModel), &'static str> {
+    async fn create_new_preview_job(&self, create_job: CreatePreviewJobModel) -> Result<(PreviewJobDto, PreviewJobModel), &'static str> {
         let job = PreviewJobModel {
             id: None,
             status: JobStatus::InProgress,

@@ -33,7 +33,3 @@ pub async fn file(Path(file_id): Path<String>, Query(params): Query<HashMap<Stri
         Err((StatusCode::NOT_FOUND, ()))
     }
 }
-
-pub fn file_route(file_id: &str, token: &str) -> String {
-    format!("/file/{}?token={}", file_id, token)
-}

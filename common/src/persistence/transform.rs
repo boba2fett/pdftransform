@@ -3,7 +3,7 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel, TransformData},
+    models::{CreateTransformJobModel, JobLinks, JobStatus, TransformJobDto, TransformJobModel, TransformData},
     util::routes::transform_job_route,
     util::random::generate_30_alphanumeric,
 };
@@ -16,7 +16,7 @@ pub trait TransformPersistence: Send + Sync {
     async fn _get_transform_job_dto(&self, job_id: &str) -> Result<TransformJobDto, &'static str>;
     async fn get_transform_job_model(&self, job_id: &str, token: &str) -> Result<TransformJobModel, &'static str>;
     async fn _get_transform_job_model(&self, job_id: &str) -> Result<TransformJobModel, &'static str>;
-    async fn create_new_transform_job(&self, create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
+    async fn create_new_transform_job(&self, create_job: CreateTransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
     async fn save_new_transform_job(&self, job: TransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str>;
 }
 
@@ -78,7 +78,7 @@ impl TransformPersistence for MongoTransformPersistence {
         Err("Could not find job")
     }
 
-    async fn create_new_transform_job(&self, create_job: CreateTransformJobDto) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
+    async fn create_new_transform_job(&self, create_job: CreateTransformJobModel) -> Result<(TransformJobDto, TransformJobModel), &'static str> {
         let job = TransformJobModel {
             id: None,
             status: JobStatus::InProgress,

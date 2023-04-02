@@ -16,7 +16,7 @@ pub struct PreviewData {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreatePreviewJobDto {
+pub struct CreatePreviewJobModel {
     pub callback_uri: Option<String>,
     pub source_uri: String,
     pub source_mime_type: Option<String>,

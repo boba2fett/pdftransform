@@ -8,7 +8,7 @@ use axum::{Json, Router};
 use reqwest::StatusCode;
 use std::{collections::HashMap, sync::Arc};
 
-use common::models::CreateTransformJobDto;
+use common::models::CreateTransformJobModel;
 use crate::state::ServiceCollection;
 
 pub fn create_route(services: Arc<ServiceCollection>) -> Router {
@@ -24,12 +24,8 @@ pub async fn transform_job(State(services): State<Arc<ServiceCollection>>, Path(
     }
 }
 
-pub fn transform_job_route(job_id: &str, token: &str) -> String {
-    format!("/transform/{}?token={}", &job_id, token)
-}
-
 #[tracing::instrument(skip(services, create_job))]
-pub async fn create_transform_job(State(services): State<Arc<ServiceCollection>>, Json(create_job): Json<CreateTransformJobDto>) -> impl IntoResponse {
+pub async fn create_transform_job(State(services): State<Arc<ServiceCollection>>, Json(create_job): Json<CreateTransformJobModel>) -> impl IntoResponse {
     match services.transform_persistence.create_new_transform_job(create_job).await {
         Ok((job_dto, job_model)) => {
             let job_id = job_dto.id.clone();

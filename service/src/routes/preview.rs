@@ -7,7 +7,7 @@ use axum::{
 };
 use axum::{Json, Router};
 use bytes::Bytes;
-use common::models::CreatePreviewJobDto;
+use common::models::CreatePreviewJobModel;
 use common::util::random::generate_30_alphanumeric;
 use reqwest::{header::CONTENT_TYPE, StatusCode};
 use std::{collections::HashMap, sync::Arc};
@@ -32,12 +32,8 @@ pub async fn preview_job(Path(job_id): Path<String>, Query(params): Query<HashMa
     }
 }
 
-pub fn preview_job_route(job_id: &str, token: &str) -> String {
-    format!("/preview/{}?token={}", &job_id, token)
-}
-
 #[tracing::instrument(skip(services, create_job))]
-pub async fn create_preview_job(State(services): State<Arc<ServiceCollection>>, Json(create_job): Json<CreatePreviewJobDto>) -> impl IntoResponse {
+pub async fn create_preview_job(State(services): State<Arc<ServiceCollection>>, Json(create_job): Json<CreatePreviewJobModel>) -> impl IntoResponse {
     match services.preview_persistence.create_new_preview_job(create_job).await {
         Ok((job_dto, job_model)) => {
             let job_id = job_dto.id.clone();

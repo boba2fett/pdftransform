@@ -36,7 +36,6 @@ impl ServiceCollection {
         let file_storage = Arc::new(GridFSFileStorage::build(jobs_base_peristence.clone(), expire_seconds).await?);
         let preview_persistence = Arc::new(MongoPreviewPersistence { base: jobs_base_peristence.clone() });
         let transform_persistence = Arc::new(MongoTransformPersistence { base: jobs_base_peristence.clone() });
-        let transform_persistence = Arc::new(MongoTransformPersistence { base: jobs_base_peristence.clone() });
         let pdfium = Arc::new(pdfium);
         let preview_service = Arc::new(PdfiumPreviewService {
             storage: file_storage.clone(),

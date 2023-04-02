@@ -16,7 +16,7 @@ pub struct TransformData {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateTransformJobDto {
+pub struct CreateTransformJobModel {
     pub callback_uri: Option<String>,
     pub documents: Vec<Document>,
     pub source_files: Vec<SourceFile>,
