@@ -14,6 +14,7 @@ use worker::convert::{
         ConvertService, ConvertServiceImpl,
     };
 use worker::download::DownloadServiceImpl;
+pub type Services = Arc<ServiceCollection>;
 pub type FileStorageState = Arc<dyn FileStorage + Sync + Send>;
 pub type PreviewPersistenceState = Arc<dyn PreviewPersistence + Sync + Send>;
 pub type TransformPersistenceState = Arc<dyn TransformPersistence + Sync + Send>;

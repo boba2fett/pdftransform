@@ -6,17 +6,17 @@ use axum::{
 };
 use axum::{Json, Router};
 use reqwest::StatusCode;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use common::models::CreateTransformJobModel;
-use crate::state::ServiceCollection;
+use crate::state::Services;
 
-pub fn create_route(services: Arc<ServiceCollection>) -> Router {
+pub fn create_route(services: Services) -> Router {
     Router::new().route("/transform/:job_id", get(transform_job)).route("/transform", post(create_transform_job)).with_state(services)
 }
 
 #[tracing::instrument(skip(params, services))]
-pub async fn transform_job(State(services): State<Arc<ServiceCollection>>, Path(job_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+pub async fn transform_job(State(services): State<Services>, Path(job_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
     match services.transform_persistence.get_transform_job_dto(&job_id, token).await {
         Ok(job_dto) => Ok(Json(job_dto)),
@@ -25,7 +25,7 @@ pub async fn transform_job(State(services): State<Arc<ServiceCollection>>, Path(
 }
 
 #[tracing::instrument(skip(services, create_job))]
-pub async fn create_transform_job(State(services): State<Arc<ServiceCollection>>, Json(create_job): Json<CreateTransformJobModel>) -> impl IntoResponse {
+pub async fn create_transform_job(State(services): State<Services>, Json(create_job): Json<CreateTransformJobModel>) -> impl IntoResponse {
     match services.transform_persistence.create_new_transform_job(create_job).await {
         Ok((job_dto, job_model)) => {
             let job_id = job_dto.id.clone();
