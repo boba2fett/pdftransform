@@ -2,11 +2,38 @@ version: '3'
 services:
   mongodb:
     image: mongo:6.0.3
-  pdftransform:
-    build: .
+  nats:
+    image: nats:2.9.15
+    command: "-js"
+  service:
+    build:
+      context: .
+      dockerfile: ./service/Dockerfile
     environment:
       MONGO_URI: mongodb://mongodb:27017
+      NATS_URI: nats://nats:4222
     ports:
       - 8000:8000
     depends_on:
       - mongodb
+      - nats
+  transform:
+    build:
+      context: .
+      dockerfile: ./transform/Dockerfile
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      NATS_URI: nats://nats:4222
+    depends_on:
+      - mongodb
+      - nats
+  preview:
+    build:
+      context: .
+      dockerfile: ./preview/Dockerfile
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      NATS_URI: nats://nats:4222
+    depends_on:
+      - mongodb
+      - nats

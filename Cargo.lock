@@ -1818,18 +1818,12 @@ name = "preview"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "base64 0.21.0",
- "bytes",
- "chrono",
  "common",
- "futures",
  "image",
  "mime",
  "pdfium-render",
  "reqwest",
  "tokio",
- "tokio-stream",
- "tokio-util",
  "tracing",
  "tracing-subscriber",
 ]
@@ -2876,18 +2870,12 @@ name = "transform"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "base64 0.21.0",
- "bytes",
- "chrono",
  "common",
- "futures",
  "image",
  "mime",
  "pdfium-render",
  "reqwest",
  "tokio",
- "tokio-stream",
- "tokio-util",
  "tracing",
  "tracing-subscriber",
  "wait-timeout",

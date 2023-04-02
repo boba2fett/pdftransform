@@ -10,3 +10,4 @@ api.http
 _example
 Dockerfile
 docker-compose.yml
+.rustfmt.toml
