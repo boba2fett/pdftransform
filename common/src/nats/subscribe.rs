@@ -14,17 +14,17 @@ pub trait ISubscribeService: Sync + Send {
 }
 
 #[async_trait::async_trait]
-pub trait Worker: Sync + Send {
+pub trait IWorker: Sync + Send {
     async fn work(&self, id: String) -> Result<(), &'static str>;
 }
 
-pub struct SubscribeService  {
+pub struct SubscribeService<Worker>  {
     stream: Stream,
-    worker: Arc<dyn Worker>,
+    worker: Worker,
 }
 
-impl SubscribeService {
-    pub async fn build(base: Arc<BaseJetstream>, queue: String, worker: Arc<dyn Worker>) -> Result<Self, &'static str> {
+impl<Worker> SubscribeService<Worker> {
+    pub async fn build(base: Arc<BaseJetstream>, queue: String, worker: Worker) -> Result<Self, &'static str> {
         let stream = base.jetstream.get_or_create_stream(async_nats::jetstream::stream::Config {
             name: queue.clone(),
             max_messages: 10_000,
@@ -38,7 +38,7 @@ impl SubscribeService {
 }
 
 #[async_trait::async_trait]
-impl ISubscribeService for SubscribeService {
+impl<Worker> ISubscribeService for SubscribeService<Worker> where Worker: IWorker {
     async fn subscribe(&self) -> Result<(), &'static str> {
         let consumer = self.stream.get_or_create_consumer("pull", async_nats::jetstream::consumer::pull::Config {
             durable_name: Some("pull".to_string()),

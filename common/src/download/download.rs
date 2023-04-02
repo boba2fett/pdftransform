@@ -8,7 +8,7 @@ use tokio::io::AsyncWriteExt;
 use crate::{models::SourceFile, persistence::tempfiles::TempJobFileProvider};
 
 #[async_trait::async_trait]
-pub trait DownloadService: Send + Sync {
+pub trait IDownloadService: Send + Sync {
     async fn download_source_files(&self, client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>>;
     async fn download_source(&self, client: &reqwest::Client, source_uri: &str, job_files: &TempJobFileProvider, content_type: &Option<String>) -> Result<(PathBuf, Mime), &'static str>;
     async fn download_source_bytes(&self, client: &reqwest::Client, source_uri: &str) -> Result<Bytes, &'static str>;
@@ -20,12 +20,12 @@ pub struct DownloadedSourceFile {
     pub content_type: Mime,
 }
 
-pub struct DownloadServiceImpl {
+pub struct DownloadService {
     pub parallelism: usize,
 }
 
 #[async_trait::async_trait]
-impl DownloadService for DownloadServiceImpl {
+impl IDownloadService for DownloadService {
     async fn download_source_files(&self, client: &reqwest::Client, source_files: Vec<SourceFile>, job_files: &TempJobFileProvider) -> Vec<Result<DownloadedSourceFile, &'static str>> {
         let ref_client = &client;
         let ref_job_files = &job_files;
@@ -56,7 +56,7 @@ impl DownloadService for DownloadServiceImpl {
     }
 }
 
-impl DownloadServiceImpl {
+impl DownloadService {
     fn determine_content_type(&self, response: &Response, force_content_type: &Option<String>) -> Result<Mime, &'static str> {
         match force_content_type {
             Some(content_type) => Ok(Mime::from_str(content_type).map_err(|_| "Could not get MimeType")?),

@@ -17,7 +17,7 @@ const FILES_COLLECTION: &str = "fs.files";
 const CHUNKS_COLLECTION: &str = "fs.chunks";
 
 #[async_trait::async_trait]
-pub trait FileStorage: Send + Sync {
+pub trait IFileStorage: Send + Sync {
     async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str>;
     async fn store_result_file(&self, job_id: &str, token: &str, file_name: &str, mime_type: Option<&str>, source: Vec<u8>) -> Result<String, &'static str>;
 }
@@ -64,7 +64,7 @@ impl GridFSFileStorage {
 }
 
 #[async_trait::async_trait]
-impl FileStorage for GridFSFileStorage {
+impl IFileStorage for GridFSFileStorage {
     async fn get_result_file(&self, token: &str, file_id: &str) -> Result<(Mime, Box<dyn Stream<Item = Vec<u8>> + Unpin + Send>), &'static str> {
         let file_model = self.validate(token, file_id).await?;
         let mime_type = file_model.get_content_type();

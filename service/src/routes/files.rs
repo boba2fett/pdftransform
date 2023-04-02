@@ -13,7 +13,7 @@ use reqwest::{header, StatusCode};
 use std::collections::HashMap;
 use tokio_util::io::ReaderStream;
 
-use crate::state::FileStorageState;
+use common::state::FileStorageState;
 
 pub fn create_route(storage: FileStorageState) -> Router {
     Router::new().route("/file/:file_id", get(file)).with_state(storage)

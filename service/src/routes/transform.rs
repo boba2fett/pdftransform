@@ -18,7 +18,7 @@ pub fn create_route(services: Services) -> Router {
 #[tracing::instrument(skip(params, services))]
 pub async fn transform_job(State(services): State<Services>, Path(job_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
-    match services.transform_persistence.get_transform_job_dto(&job_id, token).await {
+    match services.persistence.transform_persistence.get_transform_job_dto(&job_id, token).await {
         Ok(job_dto) => Ok(Json(job_dto)),
         Err(e) => Err((StatusCode::NOT_FOUND, e)),
     }
@@ -26,11 +26,12 @@ pub async fn transform_job(State(services): State<Services>, Path(job_id): Path<
 
 #[tracing::instrument(skip(services, create_job))]
 pub async fn create_transform_job(State(services): State<Services>, Json(create_job): Json<CreateTransformJobModel>) -> impl IntoResponse {
-    match services.transform_persistence.create_new_transform_job(create_job).await {
+    match services.persistence.transform_persistence.create_new_transform_job(create_job).await {
         Ok((job_dto, job_model)) => {
-            let job_id = job_dto.id.clone();
-            tokio::spawn(async move { services.convert_service.process_transform_job(job_id, Some(job_model)).await });
-            Ok(Json(job_dto))
+            match services.transform_starter.publish(&job_dto.id).await {
+                Ok(_) => Ok(Json(job_dto)),
+                Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
+            }
         }
         Err(e) => Err((StatusCode::CONFLICT, e)),
     }

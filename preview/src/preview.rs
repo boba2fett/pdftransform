@@ -7,22 +7,26 @@ use std::{io::Cursor, sync::Arc};
 
 use common::{
     models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
-    persistence::files::FileStorage,
+    persistence::files::IFileStorage,
     util::routes::file_route,
 };
 
+pub fn init_pdfium() -> Result<Pdfium, &'static str> {
+    Ok(Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).map_err(|_| "Could not init pdfium")?))
+}
+
 #[async_trait::async_trait]
-pub trait PreviewService: Send + Sync {
+pub trait IPreviewService: Send + Sync {
     async fn get_preview(&self, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str>;
 }
 
-pub struct PdfiumPreviewService {
-    pub storage: Arc<dyn FileStorage>,
-    pub pdfium: Arc<Pdfium>,
+pub struct PreviewService {
+    pub storage: Arc<dyn IFileStorage>,
+    pub pdfium: Pdfium,
 }
 
 #[async_trait::async_trait]
-impl PreviewService for PdfiumPreviewService {
+impl IPreviewService for PreviewService {
     async fn get_preview(&self, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
         let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
             let document = self.pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
@@ -91,7 +95,7 @@ impl PreviewService for PdfiumPreviewService {
     }
 }
 
-impl PdfiumPreviewService {
+impl PreviewService {
     fn is_protected(&self, document: &PdfDocument) -> Result<bool, &'static str> {
         let permissions = document.permissions();
         let protected = !permissions.can_add_or_modify_text_annotations().map_err(|_| "Could not determine permissions.")?

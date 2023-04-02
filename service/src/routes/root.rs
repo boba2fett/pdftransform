@@ -1,5 +1,5 @@
 use crate::dtos::root::{MetricsDto, RootDto, RootLinks};
-use crate::state::JobsBasePersistenceState;
+use common::state::JobsBasePersistenceState;
 use common::util::consts::{NAME, VERSION};
 use axum::extract::State;
 use axum::http::StatusCode;

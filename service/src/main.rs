@@ -1,9 +1,7 @@
 use axum::Router;
 use axum::error_handling::HandleErrorLayer;
-use pdfium_render::prelude::Pdfium;
 use service::state::ServiceCollection;
 use service::routes;
-use worker::convert::transform::{init_pdfium, check_libre};
 use reqwest::StatusCode;
 use tower_http::trace::TraceLayer;
 use tracing::info;
@@ -19,16 +17,14 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Could not init tracing.");
     
     let mongo_uri = setup_mongo();
+    let nats_uri = setup_nats();
     let expire_econds = setup_expire_time();
-    let parallelism = setup_parallelism();
-    let pdfium = setup_pdfium();
-    setup_libre();
 
-    let services = Arc::new(ServiceCollection::build(&mongo_uri, expire_econds, parallelism, pdfium).await.unwrap());
+    let services = Arc::new(ServiceCollection::build(&mongo_uri, expire_econds, &nats_uri).await.unwrap());
 
     let app = Router::new()
-        .merge(routes::root::create_route(services.jobs_base_peristence.clone()))
-        .merge(routes::files::create_route(services.file_storage.clone()))
+        .merge(routes::root::create_route(services.persistence.jobs_base_peristence.clone()))
+        .merge(routes::files::create_route(services.persistence.file_storage.clone()))
         .merge(routes::preview::create_route(services.clone()))
         .merge(routes::transform::create_route(services.clone()))
         .layer(ServiceBuilder::new()
@@ -51,6 +47,10 @@ fn setup_mongo() -> String {
     env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string())
 }
 
+fn setup_nats() -> String {
+    env::var("NATS_URI").unwrap_or_else(|_| "nats://localhost:4222".to_string())
+}
+
 fn setup_expire_time() -> u64 {
     let expire = env::var("EXPIRE_AFTER_SECONDS").map(|expire| expire.parse::<u64>());
 
@@ -59,22 +59,4 @@ fn setup_expire_time() -> u64 {
         _ => 60 * 60 * 25,
     };
     expire
-}
-
-fn setup_parallelism() -> usize {
-    let parallelism = env::var("PARALLELISM").map(|expire| expire.parse::<usize>());
-    match parallelism {
-        Ok(Ok(parallelism)) if parallelism > 0 => parallelism,
-        _ => 10,
-    }
-}
-
-fn setup_pdfium() -> Pdfium {
-    init_pdfium().unwrap()
-}
-
-fn setup_libre() {
-    if !check_libre() {
-        panic!("Libre not installed.")
-    }
 }

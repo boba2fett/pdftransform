@@ -8,7 +8,7 @@ use std::{
 use common::download::DownloadedSourceFile;
 use common::{
     models::{Document, Part, Rotation, TransformDocumentResult},
-    persistence::{files::FileStorage, tempfiles::TempJobFileProvider},
+    persistence::{files::IFileStorage, tempfiles::TempJobFileProvider},
     util::routes::file_route,
 };
 use mime::Mime;
@@ -27,19 +27,19 @@ pub fn check_libre() -> bool {
 }
 
 #[async_trait::async_trait]
-pub trait TransformService: Send + Sync {
+pub trait ITransformService: Send + Sync {
     async fn get_transformation<'a>(
         &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
     ) -> Result<Vec<TransformDocumentResult>, &'static str>;
 }
 
-pub struct PdfiumLibreTransformService {
-    pub storage: Arc<dyn FileStorage>,
-    pub pdfium: Arc<Pdfium>,
+pub struct TransformService {
+    pub storage: Arc<dyn IFileStorage>,
+    pub pdfium: Pdfium,
 }
 
 #[async_trait::async_trait]
-impl TransformService for PdfiumLibreTransformService {
+impl ITransformService for TransformService {
     async fn get_transformation<'a>(
         &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
     ) -> Result<Vec<TransformDocumentResult>, &'static str> {
@@ -101,7 +101,7 @@ impl TransformService for PdfiumLibreTransformService {
     }
 }
 
-impl PdfiumLibreTransformService {
+impl TransformService {
     fn add_part(&self, new_document: &mut PdfDocument, source_document: &PdfDocument, part: &Part) -> Result<(), &'static str> {
         let start_page_number = part.start_page_number.unwrap_or(1);
         let end_page_number = part.end_page_number.unwrap_or(source_document.pages().len());

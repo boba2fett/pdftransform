@@ -1,0 +1,21 @@
+[package]
+name = "preview"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+async-trait = "0.1.66"
+tokio = "1.26.0"
+chrono = "0.4.24"
+futures = {version = "0.3.27"}
+reqwest = {version = "0.11.14", features = ["gzip", "deflate", "stream", "json"]}
+pdfium-render = {version = "0.7.34", features = ["sync"]}
+image = "0.24.5"
+base64 = "0.21.0"
+mime = "0.3.16"
+tokio-util = "0.7.7"
+tokio-stream = "0.1.12"
+bytes = "1.4.0"
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["json"] }

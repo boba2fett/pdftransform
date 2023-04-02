@@ -1814,6 +1814,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
+name = "preview"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64 0.21.0",
+ "bytes",
+ "chrono",
+ "common",
+ "futures",
+ "image",
+ "mime",
+ "pdfium-render",
+ "reqwest",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2316,12 +2337,10 @@ dependencies = [
  "chrono",
  "common",
  "futures",
- "image",
  "libc",
  "mime",
  "mongodb",
  "mongodb-gridfs",
- "pdfium-render",
  "rand",
  "reqwest",
  "serde",
@@ -2334,7 +2353,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wait-timeout",
- "worker",
 ]
 
 [[package]]
@@ -2854,6 +2872,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "transform"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64 0.21.0",
+ "bytes",
+ "chrono",
+ "common",
+ "futures",
+ "image",
+ "mime",
+ "pdfium-render",
+ "reqwest",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "wait-timeout",
+]
+
+[[package]]
 name = "trust-dns-proto"
 version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3301,38 +3341,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "worker"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "base64 0.21.0",
- "bson",
- "bytes",
- "chrono",
- "common",
- "futures",
- "image",
- "libc",
- "mime",
- "mongodb",
- "mongodb-gridfs",
- "pdfium-render",
- "rand",
- "reqwest",
- "serde",
- "serde_repr",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "wait-timeout",
 ]
 
 [[package]]
