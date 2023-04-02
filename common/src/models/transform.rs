@@ -1,6 +1,19 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+use super::{JobDto, JobModel};
+
+pub type TransformJobDto = JobDto<Vec<TransformDocumentResult>>;
+pub type TransformJobModel = JobModel<TransformData>;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TransformData {
+    pub source_files: Vec<SourceFile>,
+    pub documents: Vec<Document>,
+    pub result: Vec<TransformDocumentResult>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTransformJobDto {

@@ -6,7 +6,7 @@ use tracing::info;
 
 use crate::download::{DownloadService, DownloadedSourceFile};
 use common::models::{BaseJobDto, PreviewJobModel, TransformJobModel};
-use common::persistence::{files::TempJobFileProvider, JobsBasePersistence, PreviewPersistence, TransformPersistence};
+use common::persistence::{tempfiles::TempJobFileProvider, JobsBasePersistence, PreviewPersistence, TransformPersistence};
 
 use super::{preview::pdfium::PreviewService, transform::TransformService};
 
@@ -34,7 +34,7 @@ impl ConvertService for ConvertServiceImpl {
         if let Ok(job_model) = job_model {
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
             let job_files = TempJobFileProvider::build(&job_id).await;
-            let source_files = self.download_service.download_source_files(&client, job_model.source_files, &job_files).await;
+            let source_files = self.download_service.download_source_files(&client, job_model.data.source_files, &job_files).await;
             info!("Downloaded all files for job");
 
             let failed = source_files.iter().find(|source_file| source_file.is_err());
@@ -42,7 +42,7 @@ impl ConvertService for ConvertServiceImpl {
             match failed {
                 None => {
                     let source_files: Vec<&DownloadedSourceFile> = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-                    let results: Result<_, &str> = self.transform_service.get_transformation(&job_id, &job_model.token, &job_model.documents, source_files, &job_files).await;
+                    let results: Result<_, &str> = self.transform_service.get_transformation(&job_id, &job_model.token, &job_model.data.documents, source_files, &job_files).await;
                     match results {
                         Ok(results) => self.ready(&job_id, &job_model.callback_uri, &client, results, |self, job_id| self.transform_persistence._get_transform_job_dto(job_id)).await,
                         Err(err) => self.error(&job_id, &job_model.callback_uri, &client, err).await,
@@ -63,7 +63,7 @@ impl ConvertService for ConvertServiceImpl {
         if let Ok(job_model) = job_model {
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
             let job_files = TempJobFileProvider::build(&job_id).await;
-            let source_file = self.download_service.download_source_bytes(&client, &job_model.source_uri.unwrap()).await;
+            let source_file = self.download_service.download_source_bytes(&client, &job_model.data.source_uri.unwrap()).await;
             info!("Downloaded file for job");
 
             match source_file {

@@ -3,7 +3,7 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel},
+    models::{CreatePreviewJobDto, JobLinks, JobStatus, PreviewJobDto, PreviewJobModel, PreviewData},
     util::routes::preview_job_route,
     util::random::generate_30_alphanumeric,
 };
@@ -32,7 +32,7 @@ impl PreviewPersistence for MongoPreviewPersistence {
         Ok(PreviewJobDto {
             message: job_model.message,
             status: job_model.status,
-            result: job_model.result,
+            result: job_model.data.result,
             _links: JobLinks {
                 _self: preview_job_route(&job_id, &job_model.token),
             },
@@ -46,7 +46,7 @@ impl PreviewPersistence for MongoPreviewPersistence {
         Ok(PreviewJobDto {
             message: job_model.message,
             status: job_model.status,
-            result: job_model.result,
+            result: job_model.data.result,
             _links: JobLinks {
                 _self: preview_job_route(&job_id, &job_model.token),
             },
@@ -83,9 +83,11 @@ impl PreviewPersistence for MongoPreviewPersistence {
             id: None,
             status: JobStatus::InProgress,
             callback_uri: create_job.callback_uri,
-            source_uri: Some(create_job.source_uri),
-            source_mime_type: create_job.source_mime_type.unwrap_or("application/pdf".to_string()),
-            result: None,
+            data: PreviewData {
+                source_uri: Some(create_job.source_uri),
+                source_mime_type: create_job.source_mime_type.unwrap_or("application/pdf".to_string()),
+                result: None,
+            },
             message: None,
             token: generate_30_alphanumeric(),
             created: DateTime::now(),

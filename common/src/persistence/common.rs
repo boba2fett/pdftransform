@@ -10,7 +10,7 @@ use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
 use crate::{
-    models::{AvgTimeModel, BaseJobDto, BaseJobModel, DummyModel, JobStatus},
+    models::{AvgTimeModel, BaseJobDto, JobModel, DummyModel, JobStatus},
     util::consts::NAME,
 };
 
@@ -22,7 +22,7 @@ pub trait JobsBasePersistence: Send + Sync {
     async fn set_ready(&self, job_id: &str, results_bson: Bson) -> Result<(), &'static str>;
     async fn set_error(&self, job_id: &str, err: &str) -> Result<(), &'static str>;
     async fn _get_error_dto(&self, job_id: &str) -> Result<BaseJobDto, &'static str>;
-    async fn _get_base_job_model(&self, job_id: &str) -> Result<BaseJobModel, &'static str>;
+    async fn _get_base_job_model(&self, job_id: &str) -> Result<JobModel<()>, &'static str>;
 }
 
 pub struct MongoPersistenceBase {
@@ -150,8 +150,8 @@ impl JobsBasePersistence for MongoPersistenceBase {
         })
     }
 
-    async fn _get_base_job_model(&self, job_id: &str) -> Result<BaseJobModel, &'static str> {
-        let jobs = self.get_jobs::<BaseJobModel>();
+    async fn _get_base_job_model(&self, job_id: &str) -> Result<JobModel<()>, &'static str> {
+        let jobs = self.get_jobs::<JobModel<()>>();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs.find_one(Some(doc!("_id": id)), None).await {
                 if let Some(job_model) = result {

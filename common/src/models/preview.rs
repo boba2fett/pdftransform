@@ -1,6 +1,19 @@
 use crate::util::serialize::base64;
 use serde::{Deserialize, Serialize};
 
+use super::{JobDto, JobModel};
+
+pub type PreviewJobDto = JobDto<Option<PreviewResult>>;
+pub type PreviewJobModel = JobModel<PreviewData>;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewData {
+    pub source_uri: Option<String>,
+    pub source_mime_type: String,
+    pub result: Option<PreviewResult>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePreviewJobDto {

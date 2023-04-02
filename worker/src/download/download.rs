@@ -5,7 +5,7 @@ use reqwest::{header::CONTENT_TYPE, Response};
 use std::{path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 
-use common::{models::SourceFile, persistence::files::TempJobFileProvider};
+use common::{models::SourceFile, persistence::tempfiles::TempJobFileProvider};
 
 #[async_trait::async_trait]
 pub trait DownloadService: Send + Sync {

@@ -8,7 +8,7 @@ use std::{
 use crate::download::DownloadedSourceFile;
 use common::{
     models::{Document, Part, Rotation, TransformDocumentResult},
-    persistence::files::{FileStorage, TempJobFileProvider},
+    persistence::{files::FileStorage, tempfiles::TempJobFileProvider},
     util::routes::file_route,
 };
 use mime::Mime;

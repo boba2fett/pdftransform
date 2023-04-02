@@ -3,7 +3,7 @@ use mongodb::{bson::DateTime, Collection};
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
-    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel},
+    models::{CreateTransformJobDto, JobLinks, JobStatus, TransformJobDto, TransformJobModel, TransformData},
     util::routes::transform_job_route,
     util::random::generate_30_alphanumeric,
 };
@@ -32,7 +32,7 @@ impl TransformPersistence for MongoTransformPersistence {
         Ok(TransformJobDto {
             message: job_model.message,
             status: job_model.status,
-            result: job_model.result,
+            result: job_model.data.result,
             _links: JobLinks {
                 _self: transform_job_route(&job_id, &job_model.token),
             },
@@ -46,7 +46,7 @@ impl TransformPersistence for MongoTransformPersistence {
         Ok(TransformJobDto {
             message: job_model.message,
             status: job_model.status,
-            result: job_model.result,
+            result: job_model.data.result,
             _links: JobLinks {
                 _self: transform_job_route(&job_id, &job_model.token),
             },
@@ -83,9 +83,11 @@ impl TransformPersistence for MongoTransformPersistence {
             id: None,
             status: JobStatus::InProgress,
             callback_uri: create_job.callback_uri,
-            documents: create_job.documents,
-            source_files: create_job.source_files,
-            result: vec![],
+            data: TransformData {
+                documents: create_job.documents,
+                source_files: create_job.source_files,
+                result: vec![],
+            },
             message: None,
             token: generate_30_alphanumeric(),
             created: DateTime::now(),
