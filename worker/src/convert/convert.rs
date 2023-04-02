@@ -4,7 +4,7 @@ use futures::Future;
 use serde::Serialize;
 use tracing::info;
 
-use crate::download::{DownloadService, DownloadedSourceFile};
+use common::download::{DownloadService, DownloadedSourceFile};
 use common::models::{BaseJobDto, PreviewJobModel, TransformJobModel};
 use common::persistence::{tempfiles::TempJobFileProvider, JobsBasePersistence, PreviewPersistence, TransformPersistence};
 

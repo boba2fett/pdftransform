@@ -7,7 +7,7 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 use tracing::warn;
 
 use crate::{
-    models::{DummyModel, FileModel},
+    models::{DummyJobModel, FileModel},
     util::consts,
 };
 
@@ -41,8 +41,8 @@ impl GridFSFileStorage {
 
     async fn set_expire_after(&self, seconds: u64) -> Result<(), Error> {
         let client = self.base.get_mongo_client();
-        let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
-        let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
+        let files = client.database(&consts::NAME).collection::<DummyJobModel>(FILES_COLLECTION);
+        let chunks = client.database(&consts::NAME).collection::<DummyJobModel>(CHUNKS_COLLECTION);
 
         let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
         let index = IndexModel::builder().keys(doc! {"uploadDate": 1}).options(options).build();
@@ -77,9 +77,9 @@ impl FileStorage for GridFSFileStorage {
         let client = self.base.get_mongo_client();
         let mut bucket = self.get_bucket();
         let file_id = bucket.upload_from_stream(file_name, &*source, None).await.map_err(|_| "Could not store result.").map(|id| id.to_string())?;
-        let chunks = client.database(&consts::NAME).collection::<DummyModel>(CHUNKS_COLLECTION);
+        let chunks = client.database(&consts::NAME).collection::<DummyJobModel>(CHUNKS_COLLECTION);
         let chunks_result = chunks.update_many(doc! { "files_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"uploadDate": DateTime::now()}}, None);
-        let files = client.database(&consts::NAME).collection::<DummyModel>(FILES_COLLECTION);
+        let files = client.database(&consts::NAME).collection::<DummyJobModel>(FILES_COLLECTION);
         let file_result = files.update_one(doc! { "_id": ObjectId::from_str(&file_id).unwrap() }, doc! {"$set": {"token": token, "mimeType": mime_type}}, None);
         if file_result.await.is_err() {
             warn!("Could not set uploadDate for chunks of {}.", &file_id);

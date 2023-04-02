@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use crate::download::DownloadedSourceFile;
+use common::download::DownloadedSourceFile;
 use common::{
     models::{Document, Part, Rotation, TransformDocumentResult},
     persistence::{files::FileStorage, tempfiles::TempJobFileProvider},

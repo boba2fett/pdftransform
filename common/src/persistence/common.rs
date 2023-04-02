@@ -10,7 +10,7 @@ use serde::Serialize;
 use std::{str::FromStr, time::Duration};
 
 use crate::{
-    models::{AvgTimeModel, BaseJobDto, JobModel, DummyModel, JobStatus},
+    models::{AvgTimeModel, BaseJobDto, JobModel, DummyJobModel, JobStatus},
     util::consts::NAME,
 };
 
@@ -44,7 +44,7 @@ impl MongoPersistenceBase {
     }
 
     async fn set_expire_after(&self, seconds: u64) -> Result<(), Error> {
-        let jobs = self.get_jobs::<DummyModel>();
+        let jobs = self.get_jobs::<DummyJobModel>();
 
         let options = IndexOptions::builder().expire_after(Duration::new(seconds, 0)).build();
         let index = IndexModel::builder().keys(doc! {"created": 1}).options(options).build();
@@ -63,7 +63,7 @@ impl MongoPersistenceBase {
 impl JobsBasePersistence for MongoPersistenceBase {
     async fn jobs_health(&self) -> Result<Vec<AvgTimeModel>, &'static str> {
         let cursor = self
-            .get_jobs::<DummyModel>()
+            .get_jobs::<DummyJobModel>()
             .aggregate(
                 [
                     doc! {
@@ -112,7 +112,7 @@ impl JobsBasePersistence for MongoPersistenceBase {
     }
 
     async fn set_ready(&self, job_id: &str, results_bson: Bson) -> Result<(), &'static str> {
-        let jobs = self.get_jobs::<DummyModel>();
+        let jobs = self.get_jobs::<DummyJobModel>();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs
                 .update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Finished as u32 ,"result": results_bson, "finished": DateTime::now()}}, None)
@@ -127,7 +127,7 @@ impl JobsBasePersistence for MongoPersistenceBase {
     }
 
     async fn set_error(&self, job_id: &str, err: &str) -> Result<(), &'static str> {
-        let jobs = self.get_jobs::<DummyModel>();
+        let jobs = self.get_jobs::<DummyJobModel>();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs.update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Error as u32, "message": err, "finished": DateTime::now()}}, None).await {
                 if result.modified_count > 0 {

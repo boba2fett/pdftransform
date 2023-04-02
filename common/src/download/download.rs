@@ -1,11 +1,11 @@
-use axum::body::Bytes;
+use bytes::Bytes;
 use futures::StreamExt;
 use mime::Mime;
 use reqwest::{header::CONTENT_TYPE, Response};
 use std::{path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 
-use common::{models::SourceFile, persistence::tempfiles::TempJobFileProvider};
+use crate::{models::SourceFile, persistence::tempfiles::TempJobFileProvider};
 
 #[async_trait::async_trait]
 pub trait DownloadService: Send + Sync {
