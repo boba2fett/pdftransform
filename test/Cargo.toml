@@ -1,0 +1,9 @@
+[package]
+name = "test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+axum = "0.6.11"
+tokio = { version = "1.26.0", features = ["fs"]}

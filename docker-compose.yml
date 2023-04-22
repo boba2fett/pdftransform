@@ -1,10 +1,12 @@
 version: '3'
 services:
-  mongodb:
-    image: mongo:6.0.3
   nats:
     image: nats:2.9.15
-    command: "-js"
+    command: "-js -DV"
+  mongodb:
+    image: mongo:6.0.3
+    depends_on:
+      - nats
   service:
     build:
       context: .
@@ -37,3 +39,8 @@ services:
     depends_on:
       - mongodb
       - nats
+  # test:
+  #   build:
+  #     context: .
+  #     dockerfile: ./test/Dockerfile
+  #   tty: true

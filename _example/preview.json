@@ -1,4 +1,4 @@
 {
-    "callbackUri": "https://en6nv5h9gx7s3.x.pipedream.net/",
+    "callbackUri": "http://mypc:8001/preview-callback",
     "sourceUri": "https://tcpdf.org/files/examples/example_041.pdf"
 }

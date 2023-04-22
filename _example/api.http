@@ -38,3 +38,11 @@ POST {{endpoint}}/preview/sync
 Content-Type: application/pdf
 
 < samples/example_041.pdf
+
+###
+POST http://mypc:8001/preview-callback
+Content-Type: application/json
+
+{
+    "as": "asd"
+}

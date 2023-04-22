@@ -1,5 +1,5 @@
 {
-    "callbackUri": "https://en6nv5h9gx7s3.x.pipedream.net/",
+    "callbackUri": "http://mypc:8001/transform-callback",
     "documents": [
         {
             "id": "d1",

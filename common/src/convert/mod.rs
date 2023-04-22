@@ -30,8 +30,9 @@ impl BaseConvertService {
             let dto = job_fn(self, &job_id).await;
             if let Ok(dto) = dto {
                 let result = client.post(callback_uri).json::<JobType>(&dto).send().await;
-                if let Err(err) = result {
-                    info!("Error sending callback '{}' to '{}', because of {}", &job_id, callback_uri, err);
+                match result {
+                    Ok(ok) => info!("Send callback '{}' to '{}', with {}", &job_id, callback_uri, ok.status()),
+                    Err(err) => info!("Error sending callback '{}' to '{}', because of {}", &job_id, callback_uri, err),
                 }
             }
         }

@@ -18,7 +18,7 @@ pub struct ConvertService {
 #[async_trait::async_trait]
 impl IWorker for ConvertService {
     #[tracing::instrument(skip(self))]
-    async fn work(&self, job_id: String) -> Result<(), &'static str> {
+    async fn work(&self, job_id: &str) -> Result<(), &'static str> {
         info!("Starting job");
         let job_model = self.base.preview_persistence._get_preview_job_model(&job_id).await;
         if let Ok(job_model) = job_model {

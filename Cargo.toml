@@ -1,2 +1,2 @@
 [workspace]
-members = ["common", "service", "transform", "preview"]
+members = ["common", "service", "transform", "preview", "test"]

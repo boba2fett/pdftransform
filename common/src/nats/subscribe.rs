@@ -2,7 +2,7 @@ use std::{sync::Arc};
 
 use async_nats::{jetstream::{stream::Stream, AckKind}};
 use futures::StreamExt;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::models::IdModel;
 
@@ -15,7 +15,7 @@ pub trait ISubscribeService: Sync + Send {
 
 #[async_trait::async_trait]
 pub trait IWorker: Sync + Send {
-    async fn work(&self, id: String) -> Result<(), &'static str>;
+    async fn work(&self, id: &str) -> Result<(), &'static str>;
 }
 
 pub struct SubscribeService<Worker>  {
@@ -46,16 +46,20 @@ impl<Worker> ISubscribeService for SubscribeService<Worker> where Worker: IWorke
         }).await.map_err(|_| "could not get or create consumer")?;
         let mut messages = consumer.messages().await.map_err(|_| "could not get messages")?;
         while let Some(Ok(msg)) = messages.next().await {
+            info!("procressing next message");
             let work: Result<(), &'static str> = {
                 let content: IdModel = serde_json::from_slice(&msg.payload).map_err(|_| "not valid json")?;
                 msg.ack_with(AckKind::Progress).await.map_err(|_| "could not progress")?;
-                self.worker.work(content.id).await?;
+                info!("## start: {}", &content.id);
+                self.worker.work(&content.id).await?;
+                info!("## end: {}", &content.id);
                 msg.ack().await.map_err(|_| "could not ack")?;
                 Ok(())
             };
             if let Err(err) = work {
                 error!("Error occured processing message {err}");
             }
+            info!("processing next");
         }
         Ok(())
     }
