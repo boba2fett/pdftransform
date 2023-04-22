@@ -60,7 +60,7 @@ impl ITransformService for TransformService {
                                 if self.is_supported_image(&source_file.content_type) {
                                     self.add_image(&mut new_doc, &source_file, &part)?;
                                 } else {
-                                    let source_doc = if source_file.content_type != mime::APPLICATION_PDF {
+                                    let source_doc = if source_file.content_type != mime::APPLICATION_PDF && check_libre() {
                                         let source_path = self.load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
                                         info!("Converted {} from libre", source_path.display());
                                         self.pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
