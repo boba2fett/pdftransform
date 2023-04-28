@@ -115,7 +115,7 @@ impl JobsBasePersistence for MongoPersistenceBase {
         let jobs = self.get_jobs::<DummyJobModel>();
         if let Ok(id) = ObjectId::from_str(&job_id) {
             if let Ok(result) = jobs
-                .update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Finished as u32 ,"result": results_bson, "finished": DateTime::now()}}, None)
+                .update_one(doc! {"_id": id}, doc! {"$set": {"status": JobStatus::Finished as u32 ,"data.result": results_bson, "finished": DateTime::now()}}, None)
                 .await
             {
                 if result.modified_count > 0 {

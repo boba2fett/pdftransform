@@ -1,10 +1,12 @@
 version: '3'
 services:
   nats:
-    image: nats:2.9.15
+    image: nats:scratch
     command: "-js -DV"
   mongodb:
-    image: mongo:6.0.3
+    image: mongo:6.0.5
+    # ports:
+    #   - 27017:27017
     depends_on:
       - nats
   service:

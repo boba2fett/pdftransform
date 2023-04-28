@@ -36,9 +36,9 @@ RUN chmod +x get_pdfium.sh && ./get_pdfium.sh
 
 FROM debian:bullseye-slim
 
-# RUN apt-get update -qq && \
-#     DEBIAN_FRONTEND=noninteractive apt-get install libreoffice-core-nogui libreoffice-java-common openjdk-17-jre-headless -y --no-install-recommends && \
-#     apt-get clean && find /var/lib/apt/lists -type f -delete
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install libreoffice-core-nogui libreoffice-java-common openjdk-17-jre-headless -y --no-install-recommends && \
+    apt-get clean && find /var/lib/apt/lists -type f -delete
 
 WORKDIR /app
 COPY --from=build /app/target/release/transform transform

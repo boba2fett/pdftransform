@@ -4,22 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bson = { version = "2.6.0", features = ["chrono-0_4"] }
+bson = { version = "2.6.1", features = ["chrono-0_4"] }
 chrono = "0.4.24"
-serde = { version = "1.0.156", features = ["derive"] }
-serde_repr = "0.1.11"
-serde_json = "1.0.94"
-async-trait = "0.1.66"
+serde = { version = "1.0.159", features = ["derive"] }
+serde_repr = "0.1.12"
+serde_json = "1.0.95"
+async-trait = "0.1.68"
 mongodb = "2.4.0"
-mongodb-gridfs = "0.2.4"
-tokio = { version = "1.26.0", features = ["fs"]}
-mime = "0.3.16"
+mongodb-gridfs = "0.2.5"
+tokio = { version = "1.27.0", features = ["fs"]}
+mime = "0.3.17"
 tracing = "0.1.37"
-futures = {version = "0.3.27"}
+futures = {version = "0.3.28"}
 rand = "0.8.5"
 base64 = "0.21.0"
 tokio-util = "0.7.7"
 tokio-stream = "0.1.12"
-async-nats = "0.28.0"
-reqwest = {version = "0.11.14", features = ["gzip", "deflate", "stream", "json"]}
+async-nats = "0.29.0"
+reqwest = {version = "0.11.16", features = ["gzip", "deflate", "stream", "json"]}
 bytes = "1.4.0"

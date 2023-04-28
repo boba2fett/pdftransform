@@ -27,7 +27,7 @@ impl Services {
             download_service: download_service,
         };
         let base_nats = Arc::new(BaseJetstream::build(nats_uri).await?);
-        let subscriber = Arc::new(SubscribeService::build(base_nats.clone(), "transform".to_string(), worker).await?);
+        let subscriber = Arc::new(SubscribeService::build(base_nats.clone(), "preview".to_string(), worker).await?);
         Ok(Services {
             subscriber
         })

@@ -1,6 +1,7 @@
 use std::env;
 
 use pdfium_render::prelude::Pdfium;
+use tracing::warn;
 use transform::{state::Services, transform::{init_pdfium, check_libre}};
 
 #[tokio::main]
@@ -51,6 +52,6 @@ fn setup_pdfium() -> Pdfium {
 
 fn setup_libre() {
     if !check_libre() {
-        panic!("Libre not installed.")
+        warn!("Libre not installed.")
     }
 }
