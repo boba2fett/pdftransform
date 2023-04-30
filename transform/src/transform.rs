@@ -1,9 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-    sync::Arc,
-    time::Duration,
-};
+use std::sync::Arc;
 
 use common::download::DownloadedSourceFile;
 use common::{
@@ -14,16 +9,9 @@ use common::{
 use mime::Mime;
 use pdfium_render::prelude::*;
 use tracing::info;
-use wait_timeout::ChildExt;
 
 pub fn init_pdfium() -> Result<Pdfium, &'static str> {
-    Ok(Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).map_err(|_| "Could not init pdfium")?))
-}
-
-const LIBRE: &str = "/usr/bin/soffice";
-
-pub fn check_libre() -> bool {
-    Path::new("/usr/lib/libreoffice/program").exists()
+    Ok(Pdfium::new(Pdfium::bind_to_statically_linked_library().map_err(|_| "Could not init pdfium")?))
 }
 
 #[async_trait::async_trait]
@@ -60,13 +48,7 @@ impl ITransformService for TransformService {
                                 if self.is_supported_image(&source_file.content_type) {
                                     self.add_image(&mut new_doc, &source_file, &part)?;
                                 } else {
-                                    let source_doc = if source_file.content_type != mime::APPLICATION_PDF && check_libre() {
-                                        let source_path = self.load_from_libre(&source_file.path, &source_file.content_type, job_files)?;
-                                        info!("Converted {} from libre", source_path.display());
-                                        self.pdfium.load_pdf_from_file(&source_path, None).map_err(|_| "Could not create document.")?
-                                    } else {
-                                        self.pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?
-                                    };
+                                    let source_doc = self.pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
                                     info!("source {} has {} pages", &source_file.id, source_doc.pages().len());
                                     *cache_ref = Some((&part.source_file, source_doc));
                                     self.add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
@@ -188,40 +170,5 @@ impl TransformService {
 
     fn is_supported_image(&self, content_type: &Mime) -> bool {
         content_type.eq(&mime::IMAGE_PNG) || content_type.eq(&mime::IMAGE_JPEG) || content_type.eq(&mime::IMAGE_GIF) || content_type.eq(&mime::IMAGE_BMP)
-    }
-
-    fn load_from_libre(&self, source: &PathBuf, source_mime_type: &Mime, job_files: &TempJobFileProvider) -> Result<PathBuf, &'static str> {
-        let result_path = job_files.get_path();
-        std::fs::create_dir_all(&result_path).unwrap();
-        let output = &result_path.as_os_str();
-        let result_path = result_path.join(source.file_name().unwrap()).with_extension("pdf");
-        let input = source.as_os_str();
-
-        let mut child = Command::new(LIBRE)
-            .arg("--headless")
-            .arg("--convert-to")
-            .arg("pdf")
-            .arg(input)
-            .arg("--outdir")
-            .arg(output)
-            .stdout(Stdio::piped())
-            .spawn()
-            .map_err(|_| "Could not start libre")?;
-
-        let one_sec = Duration::from_secs(30);
-        let status_code = match child.wait_timeout(one_sec).map_err(|_| "Could not wait on libre")? {
-            Some(status) => status.code(),
-            None => {
-                child.kill().map_err(|_| "Could not kill libre")?;
-                child.wait().map_err(|_| "Could not wait for libre")?.code()
-            }
-        };
-        match status_code {
-            Some(0) => Ok(result_path),
-            _ => {
-                info!("Libre failed with '{:?}'", child.stdout);
-                Err("Something went wrong")
-            }
-        }
     }
 }

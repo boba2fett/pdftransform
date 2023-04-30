@@ -1,8 +1,7 @@
 use std::env;
 
 use pdfium_render::prelude::Pdfium;
-use tracing::warn;
-use transform::{state::Services, transform::{init_pdfium, check_libre}};
+use transform::{state::Services, transform::init_pdfium};
 
 #[tokio::main]
 async fn main() {
@@ -14,7 +13,6 @@ async fn main() {
     let expire_econds = setup_expire_time();
     let parallelism = setup_parallelism();
     let pdfium = setup_pdfium();
-    setup_libre();
 
     let worker = Services::build(&mongo_uri, expire_econds, parallelism, &nats_uri, pdfium).await.unwrap();
     worker.subscriber.subscribe().await.unwrap();
@@ -48,10 +46,4 @@ fn setup_parallelism() -> usize {
 
 fn setup_pdfium() -> Pdfium {
     init_pdfium().unwrap()
-}
-
-fn setup_libre() {
-    if !check_libre() {
-        warn!("Libre not installed.")
-    }
 }

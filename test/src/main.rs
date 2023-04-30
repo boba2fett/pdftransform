@@ -6,7 +6,7 @@ use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 async fn main() {
     let app = Router::new()
     .route("/transform-callback", post(transform_callback))
-    .route("/previewcallback", post(preview_callback));
+    .route("/preview-callback", post(preview_callback));
 
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 8001);
     println!("listening on {}", &addr);

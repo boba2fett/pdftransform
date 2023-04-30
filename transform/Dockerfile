@@ -1,10 +1,33 @@
-FROM rust:1.68.2-slim-bullseye as build
+FROM rust:slim-bullseye as build
 
 WORKDIR /app
 
 RUN apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget -y --no-install-recommends && \
+    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget git python3 procps xz-utils lsb-release sudo musl-tools -y --no-install-recommends && \
     apt-get clean && find /var/lib/apt/lists -type f -delete
+
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+ENV PATH="${PATH}:/app/depot_tools"
+
+RUN gclient config --unmanaged https://pdfium.googlesource.com/pdfium.git
+RUN gclient sync --no-history
+
+WORKDIR /app/pdfium
+
+RUN ./build/install-build-deps.sh --no-prompt
+RUN rm out/Default/args.gn || true
+RUN gn gen out/Default
+
+COPY pdfium_options.sh .
+RUN chmod +x pdfium_options.sh && ./pdfium_options.sh
+
+RUN ninja -C out/Default pdfium
+
+RUN stat /app/pdfium/out/Default/obj/libpdfium.a
+
+WORKDIR /app
+
+RUN rustup target add x86_64-unknown-linux-musl
 
 RUN cargo new --bin common
 COPY common/Cargo.* common/
@@ -28,21 +51,13 @@ RUN cargo build --release
 
 COPY common/src common/src
 COPY transform/src transform/src
+#/app/pdfium/out/Default/obj/libpdfium.a
+RUN PDFIUM_STATIC_LIB_PATH=/app/pdfium/out/Default/obj/ cargo build --release --target x86_64-unknown-linux-musl
 
-RUN cargo build --release
-
-COPY get_pdfium.sh .
-RUN chmod +x get_pdfium.sh && ./get_pdfium.sh
-
-FROM debian:bullseye-slim
-
-RUN apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install libreoffice-core-nogui libreoffice-java-common openjdk-17-jre-headless -y --no-install-recommends && \
-    apt-get clean && find /var/lib/apt/lists -type f -delete
+FROM scratch
 
 WORKDIR /app
-COPY --from=build /app/target/release/transform transform
-COPY --from=build /app/libpdfium.so .
+COPY --from=build /app/target/x86_64-unknown-linux-musl/release/transform transform
 ENV RUST_LOG=debug
 EXPOSE 8000
 

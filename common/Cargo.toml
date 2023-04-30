@@ -23,3 +23,5 @@ tokio-stream = "0.1.12"
 async-nats = "0.29.0"
 reqwest = {version = "0.11.16", features = ["gzip", "deflate", "stream", "json"]}
 bytes = "1.4.0"
+openssl = { version = "0.10.51", features = ["vendored"] }
+openssl-sys = { version = "0.9.87", default-features = false, features = ["vendored"] }
