@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 common = { path = "../common" }
 axum = "0.6.12"
+axum-server = { version = "0.4.7", features = ["tls-rustls"]}
 async-trait = "0.1.68"
 mongodb = "2.4.0"
 mongodb-gridfs = "0.2.5"
