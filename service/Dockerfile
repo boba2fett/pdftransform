@@ -1,4 +1,4 @@
-FROM rust:slim-bullseye as openssl
+FROM rust:1.69.0-slim-bullseye as openssl
 
 WORKDIR /app
 
@@ -21,15 +21,16 @@ RUN make install
 
 RUN ls /app/lib/
 
-FROM rust:slim-bullseye as build
+FROM rust:1.69.0-slim-bullseye as build
 
 WORKDIR /app
 
 RUN apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget git python3 procps xz-utils lsb-release sudo musl-tools -y --no-install-recommends && \
+    DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget git python3 procps xz-utils lsb-release sudo musl-tools build-essential -y --no-install-recommends && \
     apt-get clean && find /var/lib/apt/lists -type f -delete
 
 RUN rustup target add x86_64-unknown-linux-musl
+ENV RUST_BACKTRACE=1
 
 COPY --from=openssl /app/lib/ lib/
 
