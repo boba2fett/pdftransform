@@ -16,4 +16,4 @@ tracing-subscriber = { version = "0.3.17", features = ["json"] }
 
 [features]
 
-static = ["pdfium-render/static", "pdfium-render/libc++"]
+static = ["pdfium-render/static"]

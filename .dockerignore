@@ -11,3 +11,4 @@ _example
 Dockerfile
 docker-compose.yml
 .rustfmt.toml
+pdfium_static

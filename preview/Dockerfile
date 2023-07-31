@@ -6,9 +6,6 @@ RUN apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install pkg-config libssl-dev wget git python3 procps xz-utils lsb-release sudo musl-tools build-essential file g++-10 -y --no-install-recommends && \
     apt-get clean && find /var/lib/apt/lists -type f -delete
 
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10
-RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
-
 RUN rustup target add x86_64-unknown-linux-musl
 ENV RUST_BACKTRACE=1
 
@@ -56,7 +53,7 @@ RUN cargo build --release --target x86_64-unknown-linux-musl --features static
 COPY common/src common/src
 COPY preview/src preview/src
 
-RUN PDFIUM_STATIC_LIB_PATH=/app/pdfium/out/Default/obj/ cargo build --release --target x86_64-unknown-linux-musl  --features static
+RUN RUSTFLAGS='-C target-feature=+crt-static -l /app/pdfium/out/Default/obj/libpdfium.a' PDFIUM_STATIC_LIB_PATH=/app/pdfium/out/Default/obj/ cargo build --release --target x86_64-unknown-linux-musl  --features static
 
 FROM scratch
 
