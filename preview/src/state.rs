@@ -19,7 +19,7 @@ impl Services {
         });
         let worker = ConvertService {
             base: Arc::new(BaseConvertService {
-                base_persistence: persistence.jobs_base_peristence.clone(),
+                job_persistence: persistence.jobs_base_peristence.clone(),
                 preview_persistence: persistence.preview_persistence.clone(),
                 transform_persistence: persistence.transform_persistence.clone(),
             }),

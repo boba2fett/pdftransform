@@ -1,26 +1,21 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
-use common::{state::PersistenceServiceCollection, nats::{publish::{IPublishService, PublishService}, base::BaseJetstream}};
+use axum::extract::State;
+use common::{nats::{publish::{PublishService, IPublishService}}, util::state::NatsBaseServiceCollection, persistence::IJobPersistence};
 
-pub type Services = Arc<ServiceCollection>;
-pub type PublishServiceState = Arc<dyn IPublishService + Sync + Send>;
+pub type Services = State<Arc<ServiceCollection>>;
 
 pub struct ServiceCollection {
-    pub persistence: Arc<PersistenceServiceCollection>,
-    pub preview_starter: PublishServiceState,
-    pub transform_starter: PublishServiceState,
+    pub publish_service: Arc<dyn IPublishService>,
+    pub job_persistence: Arc<dyn IJobPersistence>,
 }
 
 impl ServiceCollection {
-    pub async fn build(mongo_uri: &str, expire_seconds: u64, nats_uri: &str) -> Result<Self, &'static str> {
-        let persistence = Arc::new(PersistenceServiceCollection::build(mongo_uri, expire_seconds).await?);
-        let base_nats = Arc::new(BaseJetstream::build(nats_uri).await?);
-        let preview_starter = Arc::new(PublishService::build(base_nats.clone(), "preview".to_string()).await?);
-        let transform_starter = Arc::new(PublishService::build(base_nats.clone(), "transform".to_string()).await?);
-        Ok(ServiceCollection {
-            persistence,
-            preview_starter,
-            transform_starter,
-        })
+    pub async fn build(nats_uri: &str, stream: String, bucket: String, max_age: Duration) -> Result<Arc<Self>, &'static str> {
+        let base = NatsBaseServiceCollection::build(nats_uri, bucket, max_age).await?;
+        Ok(Arc::new(ServiceCollection{
+            publish_service: Arc::new(PublishService::new(base.base_jetstream.clone(), stream)),
+            job_persistence: base.job_persistence.clone(),
+        }))
     }
 }

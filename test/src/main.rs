@@ -1,5 +1,5 @@
 use axum::{Router, routing::post, Json, response::IntoResponse, http::StatusCode};
-use common::models::{TransformJobDto, PreviewJobDto};
+use common::dtos::{TransformJobDto, PreviewJobDto};
 use std::net::{SocketAddr, IpAddr, Ipv6Addr};
 
 #[tokio::main]

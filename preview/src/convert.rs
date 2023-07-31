@@ -1,27 +1,31 @@
 use std::sync::Arc;
 
 use common::convert::BaseConvertService;
-use common::nats::subscribe::IWorker;
+use common::models::PreviewJobModel;
+use common::nats::subscribe::IWorkerService;
+use common::persistence::IJobPersistence;
 use tracing::info;
 
-use common::download::{IDownloadService};
-use common::persistence::{tempfiles::TempJobFileProvider};
+use common::download::IDownloadService;
+use common::persistence::tempfiles::TempJobFileProvider;
 
 use super::preview::IPreviewService;
 
 pub struct ConvertService {
     pub base: Arc<BaseConvertService>,
+    pub job_persistence: Arc<dyn IJobPersistence>,
     pub preview_service: Arc<dyn IPreviewService>,
     pub download_service: Arc<dyn IDownloadService>,
 }
 
 #[async_trait::async_trait]
-impl IWorker for ConvertService {
+impl IWorkerService for ConvertService {
     #[tracing::instrument(skip(self))]
     async fn work(&self, job_id: &str) -> Result<(), &'static str> {
         info!("Starting job");
-        let job_model = self.base.preview_persistence._get_preview_job_model(&job_id).await;
-        if let Ok(job_model) = job_model {
+        let job_model = self.base.job_persistence.get(&job_id).await;
+        if let Ok(Some(job_model)) = job_model {
+            let job_model: PreviewJobModel = serde_json::from_slice(&job_model);
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
             let job_files = TempJobFileProvider::build(&job_id).await;
             let source_file = self.download_service.download_source_bytes(&client, &job_model.data.source_uri.unwrap()).await;

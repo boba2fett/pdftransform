@@ -5,11 +5,10 @@ use axum::{
     routing::{get, post},
 };
 use axum::{Json, Router};
+use common::dtos::CreateTransformJobDto;
 use reqwest::StatusCode;
 use std::collections::HashMap;
 
-use common::models::CreateTransformJobModel;
-use crate::state::Services;
 
 pub fn create_route(services: Services) -> Router {
     Router::new().route("/transform/:job_id", get(transform_job)).route("/transform", post(create_transform_job)).with_state(services)
@@ -25,7 +24,7 @@ pub async fn transform_job(State(services): State<Services>, Path(job_id): Path<
 }
 
 #[tracing::instrument(skip(services, create_job))]
-pub async fn create_transform_job(State(services): State<Services>, Json(create_job): Json<CreateTransformJobModel>) -> impl IntoResponse {
+pub async fn create_transform_job(State(services): State<Services>, Json(create_job): Json<CreateTransformJobDto>) -> impl IntoResponse {
     match services.persistence.transform_persistence.create_new_transform_job(create_job).await {
         Ok((job_dto, job_model)) => {
             match services.transform_starter.publish(&job_dto.id).await {

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::models::{IdModel, RefIdModel};
+use crate::models::RefIdModel;
 
-use super::base::BaseJetstream;
+use super::base::BaseJetStream;
 
 #[async_trait::async_trait]
 pub trait IPublishService: Sync + Send {
@@ -10,21 +10,16 @@ pub trait IPublishService: Sync + Send {
 }
 
 pub struct PublishService  {
-    base: Arc<BaseJetstream>,
-    queue: String,
+    base: Arc<BaseJetStream>,
+    stream: String,
 }
 
 impl PublishService {
-    pub async fn build(base: Arc<BaseJetstream>, queue: String) -> Result<Self, &'static str> {
-        _ = base.jetstream.get_or_create_stream(async_nats::jetstream::stream::Config {
-            name: queue.clone(),
-            max_messages: 10_000,
-            ..Default::default()
-        }).await.map_err(|_| "could not get or create stream")?;
-        Ok(PublishService {
+    pub fn new(base: Arc<BaseJetStream>, stream: String) -> Self {
+        PublishService {
             base,
-            queue,
-        })
+            stream,
+        }
     }
 }
 
@@ -35,7 +30,7 @@ impl IPublishService for PublishService {
             id,
         };
         let json = serde_json::to_string(&content).map_err(|_| "not valid json")?;
-        self.base.jetstream.publish(self.queue.clone(), json.into()).await.map_err(|_| "not published")?;
+        self.base.jetstream.publish(self.stream.clone(), json.into()).await.map_err(|_| "not published")?;
         Ok(())
     }
 }

@@ -1,4 +1,3 @@
-use common::models::AvgTimeModel;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,10 +14,4 @@ pub struct RootDto {
 pub struct RootLinks {
     pub transform: &'static str,
     pub preview: &'static str,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MetricsDto {
-    pub jobs: Vec<AvgTimeModel>,
 }

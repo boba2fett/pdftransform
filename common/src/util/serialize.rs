@@ -1,3 +1,8 @@
+use serde::{Serialize, Deserialize};
+
+pub trait Serializable: Serialize + Send + Sync {}
+pub trait Deserializable<'de>: Deserialize<'de> + Sized + Send + Sync {}
+
 pub mod base64 {
     use base64::engine::general_purpose;
     use base64::Engine;
@@ -12,5 +17,9 @@ pub mod base64 {
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
         let base64 = String::deserialize(d)?;
         general_purpose::STANDARD_NO_PAD.decode(base64.as_bytes()).map_err(|e| serde::de::Error::custom(e))
+    }
+
+    pub fn deserialize_str<'de>(base64: String) -> Result<Vec<u8>, &'static str> {
+        general_purpose::STANDARD_NO_PAD.decode(base64).map_err(|_| "base64 err")
     }
 }

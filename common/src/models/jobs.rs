@@ -1,50 +1,44 @@
-use bson::oid::ObjectId;
-use mongodb::bson::DateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use chrono::serde::ts_seconds;
+
+use crate::util::serialize::Serializable;
+
+use super::ToIdJson;
 
 #[derive(Debug, Serialize_repr, Deserialize_repr, Clone)]
 #[repr(u8)]
 pub enum JobStatus {
-    InProgress = 0,
-    Finished = 1,
-    Error = 2,
+    Pending = 0,
+    InProgress = 1,
+    Finished = 2,
+    Error = 3,
 }
 
-pub type BaseJobModel = JobModel<()>;
+pub type BaseJobModel = JobModel<(), ()>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct JobModel<DataType> {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+pub struct JobModel<InputType, ResultType> {
+    pub id: String,
     pub token: String,
-    pub created: DateTime,
+    #[serde(with = "ts_seconds")]
+    pub created: DateTime<Utc>,
     pub status: JobStatus,
     pub message: Option<String>,
     pub callback_uri: Option<String>,
-    pub data: DataType,
+    pub input: InputType,
+    pub result: Option<ResultType>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct BaseJobDto {
-    pub id: String,
-    pub callback_uri: Option<String>,
-    pub created: DateTime,
-    pub status: JobStatus,
-    pub message: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JobDto<ResultType> {
-    pub id: String,
-    pub status: JobStatus,
-    pub message: Option<String>,
-    pub result: ResultType,
-    #[serde(rename = "_links")]
-    pub _links: JobLinks,
+impl<InputType, ResultType> ToIdJson for JobModel<InputType, ResultType> where InputType: Serializable, ResultType: Serializable {
+    fn to_json(&self) -> Result<String, &'static str> {
+        serde_json::to_string(self).map_err(|_| "job is not valid json")
+    }
+    fn get_id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,11 +58,4 @@ pub struct IdModel {
 #[serde(rename_all = "camelCase")]
 pub struct RefIdModel<'a> {
     pub id: &'a str,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct DummyJobModel {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
 }
