@@ -7,9 +7,13 @@ edition = "2021"
 common = { path = "../common" }
 async-trait = "0.1.68"
 tokio = "1.27.0"
-reqwest = {version = "0.11.16", features = ["gzip", "deflate", "stream", "json"]}
-pdfium-render = {version = "0.7.34", features = ["sync", "static", "libstdc++"]}
+reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+pdfium-render = {version = "0.7.34", features = ["sync"]}
 image = "0.24.6"
 mime = "0.3.17"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["json"] }
+
+[features]
+
+static = ["pdfium-render/static", "pdfium-render/libc++"]

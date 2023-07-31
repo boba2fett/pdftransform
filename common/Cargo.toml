@@ -21,7 +21,5 @@ base64 = "0.21.0"
 tokio-util = "0.7.7"
 tokio-stream = "0.1.12"
 async-nats = "0.29.0"
-reqwest = {version = "0.11.16", features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
 bytes = "1.4.0"
-openssl = { version = "0.10.52" }
-openssl-sys = { version = "0.9.87" }

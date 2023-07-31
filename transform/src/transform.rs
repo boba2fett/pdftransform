@@ -10,8 +10,14 @@ use mime::Mime;
 use pdfium_render::prelude::*;
 use tracing::info;
 
+#[cfg(feature = "static")]
 pub fn init_pdfium() -> Result<Pdfium, &'static str> {
     Ok(Pdfium::new(Pdfium::bind_to_statically_linked_library().map_err(|_| "Could not init pdfium")?))
+}
+
+#[cfg(not(feature = "static"))]
+pub fn init_pdfium() -> Result<Pdfium, &'static str> {
+    Ok(Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).map_err(|_| "Could not init pdfium")?))
 }
 
 #[async_trait::async_trait]
@@ -93,7 +99,7 @@ impl TransformService {
         let new_end_page_number = new_start_page_number + (end_page_number - start_page_number);
 
         new_document
-            .pages_mut()
+            .pages()
             .copy_page_range_from_document(&source_document, start_page_number - 1..=end_page_number - 1, new_start_page_number - 1)
             .map_err(|_| "Could not transfer pages.")?;
 
@@ -120,7 +126,7 @@ impl TransformService {
         let object = PdfPageImageObject::new_with_width(&new_document, &source_img, PdfPoints::new(source_img.width() as f32)).map_err(|_| "")?;
 
         let mut page = new_document
-            .pages_mut()
+            .pages()
             .create_page_at_end(PdfPagePaperSize::Custom(PdfPoints::new(source_img.width() as f32), PdfPoints::new(source_img.height() as f32)))
             .map_err(|_| "")?;
         page.objects_mut().add_image_object(object).map_err(|_| "")?;

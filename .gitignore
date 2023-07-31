@@ -1,3 +1,4 @@
 target
 tmp
 libpdfium.so
+pdfium_static

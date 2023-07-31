@@ -11,8 +11,14 @@ use common::{
     util::routes::file_route,
 };
 
+#[cfg(feature = "static")]
 pub fn init_pdfium() -> Result<Pdfium, &'static str> {
     Ok(Pdfium::new(Pdfium::bind_to_statically_linked_library().map_err(|_| "Could not init pdfium")?))
+}
+
+#[cfg(not(feature = "static"))]
+pub fn init_pdfium() -> Result<Pdfium, &'static str> {
+    Ok(Pdfium::new(Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).map_err(|_| "Could not init pdfium")?))
 }
 
 #[async_trait::async_trait]
