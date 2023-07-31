@@ -99,7 +99,7 @@ impl TransformService {
         let new_end_page_number = new_start_page_number + (end_page_number - start_page_number);
 
         new_document
-            .pages()
+            .pages_mut()
             .copy_page_range_from_document(&source_document, start_page_number - 1..=end_page_number - 1, new_start_page_number - 1)
             .map_err(|_| "Could not transfer pages.")?;
 
@@ -126,7 +126,7 @@ impl TransformService {
         let object = PdfPageImageObject::new_with_width(&new_document, &source_img, PdfPoints::new(source_img.width() as f32)).map_err(|_| "")?;
 
         let mut page = new_document
-            .pages()
+            .pages_mut()
             .create_page_at_end(PdfPagePaperSize::Custom(PdfPoints::new(source_img.width() as f32), PdfPoints::new(source_img.height() as f32)))
             .map_err(|_| "")?;
         page.objects_mut().add_image_object(object).map_err(|_| "")?;
@@ -162,11 +162,11 @@ impl TransformService {
                     new_rotation -= 360;
                 }
                 let new_rotation = match new_rotation {
-                    0 => PdfBitmapRotation::None,
-                    90 => PdfBitmapRotation::Degrees90,
-                    180 => PdfBitmapRotation::Degrees180,
-                    270 => PdfBitmapRotation::Degrees270,
-                    _ => PdfBitmapRotation::None,
+                    0 => PdfPageRenderRotation::None,
+                    90 => PdfPageRenderRotation::Degrees90,
+                    180 => PdfPageRenderRotation::Degrees180,
+                    270 => PdfPageRenderRotation::Degrees270,
+                    _ => PdfPageRenderRotation::None,
                 };
                 page.set_rotation(new_rotation);
             }

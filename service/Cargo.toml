@@ -7,23 +7,23 @@ edition = "2021"
 common = { path = "../common" }
 axum = "0.6.19"
 axum-server = { version = "0.5.1", features = ["tls-rustls"]}
-async-trait = "0.1.68"
-mongodb = "2.4.0"
+async-trait = "0.1.72"
+mongodb = "2.6.0"
 mongodb-gridfs = "0.2.5"
 bson = { version = "2.6.1", features = ["chrono-0_4"] }
-tokio = "1.27.0"
-chrono = "0.4.24"
-serde = { version = "1.0.159", features = ["derive"] }
-serde_repr = "0.1.12"
+tokio = "1.29.1"
+chrono = "0.4.26"
+serde = { version = "1.0.177", features = ["derive"] }
+serde_repr = "0.1.16"
 reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
 futures = {version = "0.3.28"}
 rand = "0.8.5"
-base64 = "0.21.0"
+base64 = "0.21.2"
 mime = "0.3.17"
-tokio-util = "0.7.7"
-tokio-stream = "0.1.12"
+tokio-util = "0.7.8"
+tokio-stream = "0.1.14"
 bytes = "1.4.0"
 tower = { version = "0.4.13", features = ["timeout"] }
-tower-http = { version = "0.4.0", features = ["trace"] }
+tower-http = { version = "0.4.3", features = ["trace"] }
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.16", features = ["json"] }
+tracing-subscriber = { version = "0.3.17", features = ["json"] }
