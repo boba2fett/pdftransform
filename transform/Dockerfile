@@ -9,24 +9,24 @@ RUN apt-get update -qq && \
 RUN rustup target add x86_64-unknown-linux-musl
 ENV RUST_BACKTRACE=1
 
-RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-ENV PATH="${PATH}:/app/depot_tools"
+# RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+# ENV PATH="${PATH}:/app/depot_tools"
 
-RUN gclient config --unmanaged https://pdfium.googlesource.com/pdfium.git
-RUN gclient sync --no-history
+# RUN gclient config --unmanaged https://pdfium.googlesource.com/pdfium.git
+# RUN gclient sync --no-history
 
-WORKDIR /app/pdfium
+# WORKDIR /app/pdfium
 
-RUN ./build/install-build-deps.sh --no-prompt
-RUN rm out/Default/args.gn || true
-RUN gn gen out/Default
+# RUN ./build/install-build-deps.sh --no-prompt
+# RUN rm out/Default/args.gn || true
+# RUN gn gen out/Default
 
-COPY pdfium_options.sh .
-RUN chmod +x pdfium_options.sh && ./pdfium_options.sh
+# COPY pdfium_options.sh .
+# RUN chmod +x pdfium_options.sh && ./pdfium_options.sh
 
-RUN ninja -C out/Default pdfium
+# RUN ninja -C out/Default pdfium
 
-RUN stat /app/pdfium/out/Default/obj/libpdfium.a
+# RUN stat /app/pdfium/out/Default/obj/libpdfium.a
 
 WORKDIR /app
 
@@ -48,17 +48,22 @@ RUN echo "[workspace]\n"\
   "members = ['common', 'transform']"\
   > Cargo.toml
 
-RUN cargo build --release --target x86_64-unknown-linux-musl  --features static
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
 COPY common/src common/src
 COPY transform/src transform/src
 
-RUN PDFIUM_STATIC_LIB_PATH=/app/pdfium/out/Default/obj/ cargo build --release --target x86_64-unknown-linux-musl --features static
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
-FROM scratch
+COPY get_pdfium.sh .
+RUN chmod +x get_pdfium.sh
+RUN ./get_pdfium.sh
+
+FROM debian:bookworm-slim
 
 WORKDIR /app
 COPY --from=build /app/target/x86_64-unknown-linux-musl/release/transform transform
+COPY --from=build /app/libpdfium.so libpdfium.so
 ENV RUST_LOG=debug
 EXPOSE 8000
 
