@@ -1,15 +1,16 @@
 use std::sync::Arc;
+use serde::Serialize;
 use tracing::info;
 
-use crate::{persistence::IJobPersistence, models::JobModel, util::serialize::Serializable, dtos::GetSelfRoute};
+use crate::{persistence::IJobPersistence, models::JobModel, dtos::GetSelfRoute};
 
 pub struct BaseConvertService {
     pub job_persistence: Arc<dyn IJobPersistence>,
 }
 
 impl BaseConvertService {
-    pub async fn ready<'a, InputType: Serializable, ResultType: Serializable>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client)
-        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone
+    pub async fn ready<'a, InputType, ResultType>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client)
+        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone, JobModel<InputType, ResultType>: Serialize, ResultType: Serialize + Send + Sync, InputType: Serialize + Send + Sync
     {
         let result = self.job_persistence.put(job).await;
         if let Err(err) = result {
@@ -19,16 +20,16 @@ impl BaseConvertService {
         self.callback(job, client).await
     }
 
-    pub async fn error<'a, InputType: Serializable, ResultType: Serializable>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client, err: &str)
-        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone
+    pub async fn error<'a, InputType, ResultType>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client, err: &str)
+        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone, JobModel<InputType, ResultType>: Serialize, ResultType: Serialize + Send + Sync, InputType: Serialize + Send + Sync
     {
         job.message = Some(err.to_string());
         _ = self.job_persistence.put(job).await;
         self.callback(job, client).await
     }
 
-    async fn callback<'a, InputType: Serializable, ResultType: Serializable>(&'a self, job: &JobModel<InputType, ResultType>, client: &reqwest::Client)
-        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone
+    async fn callback<'a, InputType, ResultType>(&'a self, job: &JobModel<InputType, ResultType>, client: &reqwest::Client)
+        where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone, JobModel<InputType, ResultType>: Serialize, ResultType: Serialize, InputType: Serialize
     {
         if let Some(callback_uri) = &job.callback_uri {
             let dto = job.to_dto();

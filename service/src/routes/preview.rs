@@ -5,7 +5,10 @@ use axum::{
     routing::{get, post},
 };
 use axum::{Json, Router};
+use chrono::Utc;
 use common::dtos::CreatePreviewJobDto;
+use common::models::{PreviewJobModel, PreviewInput, JobStatus};
+use common::util::random;
 use reqwest::StatusCode;
 use std::collections::HashMap;
 
@@ -22,22 +25,36 @@ pub fn create_route(services: Services) -> Router {
 #[tracing::instrument(skip(params, services))]
 pub async fn preview_job(State(services): State<Services>, Path(job_id): Path<String>, Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
     let token = params.get("token").map(|token| token as &str).unwrap_or("wrong_token");
-    match services.job_persistence.get(&job_id).await {
-        Ok(job_dto) => {
-            Ok(Json(job_dto))
-        },
-        Err(e) => Err((StatusCode::NOT_FOUND, e)),
+    if let Ok(Some(job)) = services.job_persistence.get(&job_id).await {
+        let job = PreviewJobModel::from_json_slice(&job).unwrap();
+        if job.token == token {
+            return Ok(Json(job.to_dto()))
+        }
     }
+    Err(StatusCode::NOT_FOUND)
 }
 
 pub async fn create_preview_job(State(services): State<Services>, Json(create_job): Json<CreatePreviewJobDto>) -> impl IntoResponse {
-    match services.persistence.preview_persistence.create_new_preview_job(create_job).await {
-        Ok((job_dto, job_model)) => {
-            match services.preview_starter.publish(&job_dto.id).await {
-                Ok(_) => Ok(Json(job_dto)),
-                Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
-            }
-        }
+    let id = random::generate_30_alphanumeric();
+    let token = random::generate_30_alphanumeric();
+    let job = PreviewJobModel {
+        id: id.clone(),
+        token,
+        created: Utc::now(),
+        status: JobStatus::Pending,
+        message: None,
+        callback_uri: create_job.callback_uri,
+        input: PreviewInput {
+            source_uri: create_job.source_uri,
+            source_mime_type: create_job.source_mime_type,
+        },
+        result: None,
+    };
+    if let Err(e) = services.job_persistence.put(&job).await {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, e))
+    }
+    match services.publish_service.publish(&job.id).await {
+        Ok(_) => Ok(Json(job.to_dto())),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
     }
 }

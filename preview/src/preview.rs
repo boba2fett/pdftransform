@@ -6,9 +6,7 @@ use pdfium_render::{
 use std::{io::Cursor, sync::Arc};
 
 use common::{
-    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature},
-    persistence::files::IFileStorage,
-    util::routes::file_route,
+    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature}, persistence::IFileStorage,
 };
 
 #[cfg(feature = "static")]
@@ -55,9 +53,9 @@ impl IPreviewService for PreviewService {
                     let text = page.text().map_err(|_| "")?.all();
 
                     Ok(async move {
-                        let file_id = self.storage.store_result_file(&job_id, &token, &page_number, Some("image/jpeg"), bytes).await?;
+                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.jpeg", page_number), Some("image/jpeg"), bytes).await?;
                         Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
-                            download_url: file_route(&file_id, &token),
+                            download_url: file_url,
                             text,
                         })
                     })
@@ -71,10 +69,10 @@ impl IPreviewService for PreviewService {
                     let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
 
                     Ok(async move {
-                        let file_id = self.storage.store_result_file(&job_id, &token, &name, None, bytes).await?;
+                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &name), &name, None, bytes).await?;
                         Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
                             name,
-                            download_url: file_route(&file_id, &token),
+                            download_url: file_url,
                         })
                     })
                 })

@@ -1,10 +1,25 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::JobModel;
+use super::{JobModel, ToIdJson};
 
 pub type TransformResult = Vec<TransformDocumentResult>;
 pub type TransformJobModel = JobModel<TransformInput, TransformResult>;
+
+impl TransformJobModel {
+    pub fn from_json_slice<'a>(slice: &'a [u8]) -> Result<Self, &'static str> {
+       serde_json::from_slice(slice).map_err(|_| "job is not valid json")
+    }
+}
+
+// impl ToIdJson for TransformJobModel {
+//     fn to_json(&self) -> Result<String, &'static str> {
+//         serde_json::to_string(self).map_err(|_| "job is not valid json")
+//     }
+//     fn get_id(&self) -> &str {
+//         &self.id
+//     }
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

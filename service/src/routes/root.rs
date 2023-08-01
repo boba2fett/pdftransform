@@ -1,6 +1,5 @@
 use common::dtos::{RootDto, RootLinks};
 use common::util::consts::{NAME, VERSION};
-use axum::extract::State;
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Json, Router};

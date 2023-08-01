@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use axum::extract::State;
-use common::{nats::{publish::{PublishService, IPublishService}}, util::state::NatsBaseServiceCollection, persistence::IJobPersistence};
+use common::{nats::publish::{PublishService, IPublishService}, util::state::NatsBaseServiceCollection, persistence::IJobPersistence};
 
 pub type Services = State<Arc<ServiceCollection>>;
 

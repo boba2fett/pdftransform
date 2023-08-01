@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use chrono::serde::ts_seconds;
 
-use crate::util::serialize::Serializable;
-
 use super::ToIdJson;
 
 #[derive(Debug, Serialize_repr, Deserialize_repr, Clone)]
@@ -32,7 +30,7 @@ pub struct JobModel<InputType, ResultType> {
     pub result: Option<ResultType>,
 }
 
-impl<InputType, ResultType> ToIdJson for JobModel<InputType, ResultType> where InputType: Serializable, ResultType: Serializable {
+impl<InputType, ResultType> ToIdJson for JobModel<InputType, ResultType> where InputType: Serialize + Send + Sync, ResultType: Serialize + Send + Sync {
     fn to_json(&self) -> Result<String, &'static str> {
         serde_json::to_string(self).map_err(|_| "job is not valid json")
     }

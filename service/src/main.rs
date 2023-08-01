@@ -20,10 +20,10 @@ async fn main() {
     let nats_uri = setup_nats();
     let expire_econds = setup_expire_time();
 
-    let services = Arc::new(ServiceCollection::build(&mongo_uri, expire_econds, &nats_uri).await.unwrap());
+    let services = ServiceCollection::build(&mongo_uri, expire_econds, &nats_uri).await.unwrap();
 
     let app = Router::new()
-        .merge(routes::root::create_route(services.persistence.jobs_base_peristence.clone()))
+        .merge(routes::root::create_route())
         .merge(routes::files::create_route(services.persistence.file_storage.clone()))
         .merge(routes::preview::create_route(services.clone()))
         .merge(routes::transform::create_route(services.clone()))

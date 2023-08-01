@@ -1,14 +1,28 @@
 use crate::util::serialize::base64;
 use serde::{Deserialize, Serialize};
 
-use super::JobModel;
+use super::{JobModel, ToIdJson};
 
 pub type PreviewJobModel = JobModel<PreviewInput, PreviewResult>;
+
+impl PreviewJobModel {
+    pub fn from_json_slice<'a>(slice: &'a [u8]) -> Result<Self, &'static str> {
+       serde_json::from_slice(slice).map_err(|_| "job is not valid json")
+    }
+}
+
+// impl ToIdJson for PreviewJobModel {
+//     fn to_json(&self) -> Result<String, &'static str> {
+//         serde_json::to_string(self).map_err(|_| "job is not valid json")
+//     }
+//     fn get_id(&self) -> &str {
+//         &self.id
+//     }
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewInput {
-    pub callback_uri: Option<String>,
     pub source_uri: String,
     pub source_mime_type: Option<String>,
 }

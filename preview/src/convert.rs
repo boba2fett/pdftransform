@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use common::convert::BaseConvertService;
 use common::models::PreviewJobModel;
-use common::nats::subscribe::IWorkerService;
+use common::nats::subscribe::{IWorkerService, WorkError};
 use common::persistence::IJobPersistence;
 use tracing::info;
 
@@ -21,26 +21,26 @@ pub struct ConvertService {
 #[async_trait::async_trait]
 impl IWorkerService for ConvertService {
     #[tracing::instrument(skip(self))]
-    async fn work(&self, job_id: &str) -> Result<(), &'static str> {
+    async fn work(&self, job_id: &str) -> Result<(), WorkError> {
         info!("Starting job");
         let job_model = self.base.job_persistence.get(&job_id).await;
         if let Ok(Some(job_model)) = job_model {
-            let job_model: PreviewJobModel = serde_json::from_slice(&job_model);
+            let job_model = PreviewJobModel::from_json_slice(&job_model).map_err(|_| WorkError::NoRetry)?;
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
             let job_files = TempJobFileProvider::build(&job_id).await;
-            let source_file = self.download_service.download_source_bytes(&client, &job_model.data.source_uri.unwrap()).await;
+            let source_file = self.download_service.download_source_bytes(&client, &job_model.input.source_uri).await;
             info!("Downloaded file for job");
 
             match source_file {
                 Ok(source_file) => {
                     let result: Result<_, &str> = self.preview_service.get_preview(&job_id, &job_model.token, source_file.to_vec()).await;
                     match result {
-                        Ok(result) => self.base.ready(&job_id, &job_model.callback_uri, &client, result, |self, job_id| self.preview_persistence._get_preview_job_dto(job_id)).await,
-                        Err(err) => self.base.error(&job_id, &job_model.callback_uri, &client, err).await,
+                        Ok(result) => self.base.ready(&mut job_model, &client).await,
+                        Err(err) => self.base.error(&mut job_model, &client, err).await,
                     };
                 }
                 Err(err) => {
-                    self.base.error(&job_id, &job_model.callback_uri, &client, err).await;
+                    self.base.error(&mut job_model, &client, err).await;
                 }
             }
             job_files.clean_up().await;

@@ -2,6 +2,7 @@ mod preview;
 pub use preview::*;
 
 mod transform;
+use serde::Serialize;
 pub use transform::*;
 
 mod jobs;
@@ -16,7 +17,7 @@ pub trait GetSelfRoute: Clone {
     fn get_self_route(&self) -> String;
 }
 
-impl<InputType, ResultType> JobModel<InputType, ResultType> where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone {
+impl<InputType, ResultType> JobModel<InputType, ResultType> where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone, ResultType: Serialize {
     pub fn to_dto(&self) -> JobDto<ResultType> {
         JobDto {
             id: self.id.clone(),

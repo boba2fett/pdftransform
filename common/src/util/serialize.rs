@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
-pub trait Serializable: Serialize + Send + Sync {}
-pub trait Deserializable<'de>: Deserialize<'de> + Sized + Send + Sync {}
+// pub trait Serializable: Serialize + Send + Sync {}
+// pub trait Deserializable<'de>: Deserialize<'de> + Sized + Send + Sync {}
 
 pub mod base64 {
     use base64::engine::general_purpose;
