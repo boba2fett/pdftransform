@@ -13,7 +13,6 @@ use super::preview::IPreviewService;
 
 pub struct ConvertService {
     pub base: Arc<BaseConvertService>,
-    pub job_persistence: Arc<dyn IJobPersistence>,
     pub preview_service: Arc<dyn IPreviewService>,
     pub download_service: Arc<dyn IDownloadService>,
 }
@@ -25,7 +24,7 @@ impl IWorkerService for ConvertService {
         info!("Starting job");
         let job_model = self.base.job_persistence.get(&job_id).await;
         if let Ok(Some(job_model)) = job_model {
-            let job_model = PreviewJobModel::from_json_slice(&job_model).map_err(|_| WorkError::NoRetry)?;
+            let mut job_model = PreviewJobModel::from_json_slice(&job_model).map_err(|_| WorkError::NoRetry)?;
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
             let job_files = TempJobFileProvider::build(&job_id).await;
             let source_file = self.download_service.download_source_bytes(&client, &job_model.input.source_uri).await;
@@ -35,7 +34,7 @@ impl IWorkerService for ConvertService {
                 Ok(source_file) => {
                     let result: Result<_, &str> = self.preview_service.get_preview(&job_id, &job_model.token, source_file.to_vec()).await;
                     match result {
-                        Ok(result) => self.base.ready(&mut job_model, &client).await,
+                        Ok(result) => self.base.ready(&mut job_model, &client, result).await,
                         Err(err) => self.base.error(&mut job_model, &client, err).await,
                     };
                 }

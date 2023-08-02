@@ -1,4 +1,4 @@
 {
-    "callbackUri": "http://mypc:8001/preview-callback",
+    "callbackUri": null,
     "sourceUri": "https://tcpdf.org/files/examples/example_041.pdf"
 }

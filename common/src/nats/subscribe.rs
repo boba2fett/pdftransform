@@ -30,6 +30,7 @@ impl<Worker> SubscribeService<Worker> {
     pub async fn build(base: Arc<BaseJetStream>, stream: String, worker: Worker, consumer: String, max_deliver: i64, ack_wait: Duration) -> Result<Self, &'static str> {
         let stream = base.jetstream.get_or_create_stream(async_nats::jetstream::stream::Config {
             name: stream.clone(),
+            subjects: vec![format!("{}.*", stream)],
             max_messages: 10_000,
             retention: RetentionPolicy::Interest,
             ..Default::default()
@@ -55,6 +56,7 @@ impl<Worker> ISubscribeService for SubscribeService<Worker> where Worker: IWorke
     async fn subscribe(&self) -> Result<(), &'static str> {
         let consumer = self.stream.get_or_create_consumer(&self.consumer, async_nats::jetstream::consumer::pull::Config {
             name: Some(self.consumer.clone()),
+            filter_subject: format!("newJob.{}", self.consumer),
             durable_name: Some(self.consumer.clone()),
             max_deliver: self.max_deliver,
             ack_wait: self.ack_wait,

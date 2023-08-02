@@ -8,10 +8,8 @@ common = { path = "../common" }
 axum = "0.6.19"
 axum-server = { version = "0.5.1", features = ["tls-rustls"]}
 async-trait = "0.1.72"
-mongodb = "2.6.0"
-mongodb-gridfs = "0.2.5"
 bson = { version = "2.6.1", features = ["chrono-0_4"] }
-tokio = "1.29.1"
+tokio = { version = "1.29.1", features = ["rt-multi-thread"]}
 chrono = "0.4.26"
 serde = { version = "1.0.177", features = ["derive"] }
 serde_repr = "0.1.16"

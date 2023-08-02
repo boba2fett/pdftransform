@@ -1,35 +1,33 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
-use common::{nats::{subscribe::{ISubscribeService, SubscribeService}, base::BaseJetstream}, state::PersistenceServiceCollection, convert::BaseConvertService, download::DownloadService};
+use common::{nats::{subscribe::{ISubscribeService, SubscribeService}}, convert::BaseConvertService, download::DownloadService, persistence::IJobPersistence, util::state::{NatsBaseSettings, S3BaseSettings, NatsBaseServiceCollection, StorageBaseServiceCollection}};
 use pdfium_render::prelude::Pdfium;
 
 use crate::{convert::ConvertService, transform::TransformService};
 
-pub struct Services {
-    pub subscriber: Arc<dyn ISubscribeService>,
+pub struct ServiceCollection {
+    pub job_persistence: Arc<dyn IJobPersistence>,
+    pub subscribe_service: Arc<dyn ISubscribeService>,
 }
 
-impl Services {
-    pub async fn build(mongo_uri: &str, expire_seconds: u64, parallelism: usize, nats_uri: &str, pdfium: Pdfium) -> Result<Self, &'static str> {
-        let persistence = Arc::new(PersistenceServiceCollection::build(mongo_uri, expire_seconds).await?);
+impl ServiceCollection {
+    pub async fn build(settings: NatsBaseSettings<'_>, stream: String, parallelism: usize, pdfium: Pdfium, s3_settings: S3BaseSettings, consumer: String, max_deliver: i64, consumer_ack_wait: Duration) -> Result<Self, &'static str> {
+        let base = StorageBaseServiceCollection::build(&settings, s3_settings).await?;
         let download_service = Arc::new(DownloadService { parallelism });
         let transform = Arc::new(TransformService {
-            storage: persistence.file_storage.clone(),
+            storage: base.file_storage.clone(),
             pdfium,
         });
         let worker = ConvertService {
             base: Arc::new(BaseConvertService {
-                job_persistence: persistence.jobs_base_peristence.clone(),
-                preview_persistence: persistence.preview_persistence.clone(),
-                transform_persistence: persistence.transform_persistence.clone(),
+                job_persistence: base.job_persistence.clone(),
             }),
             transform_service: transform,
             download_service: download_service,
         };
-        let base_nats = Arc::new(BaseJetstream::build(nats_uri).await?);
-        let subscriber = Arc::new(SubscribeService::build(base_nats.clone(), "transform".to_string(), worker).await?);
-        Ok(Services {
-            subscriber
+        Ok(ServiceCollection{
+            subscribe_service: Arc::new(SubscribeService::build(base.base_jetstream.clone(), stream, worker, consumer, max_deliver, consumer_ack_wait).await?),
+            job_persistence: base.job_persistence.clone(),
         })
     }
 }

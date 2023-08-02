@@ -53,7 +53,7 @@ pub async fn create_preview_job(State(services): State<Services>, Json(create_jo
     if let Err(e) = services.job_persistence.put(&job).await {
         return Err((StatusCode::INTERNAL_SERVER_ERROR, e))
     }
-    match services.publish_service.publish(&job.id).await {
+    match services.preview_publish_service.publish(&job.id).await {
         Ok(_) => Ok(Json(job.to_dto())),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
     }

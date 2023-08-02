@@ -9,9 +9,10 @@ pub struct BaseConvertService {
 }
 
 impl BaseConvertService {
-    pub async fn ready<'a, InputType, ResultType>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client)
+    pub async fn ready<'a, InputType, ResultType>(&'a self, job: &mut JobModel<InputType, ResultType>, client: &reqwest::Client, result: ResultType)
         where JobModel<InputType, ResultType>: GetSelfRoute, ResultType: Clone, JobModel<InputType, ResultType>: Serialize, ResultType: Serialize + Send + Sync, InputType: Serialize + Send + Sync
     {
+        job.result = Some(result);
         let result = self.job_persistence.put(job).await;
         if let Err(err) = result {
             self.error(job, client, err).await;

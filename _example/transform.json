@@ -1,12 +1,9 @@
 {
-    "callbackUri": "http://mypc:8001/transform-callback",
+    "callbackUri": null,
     "documents": [
         {
             "id": "d1",
             "parts": [
-                {
-                    "sourceFile": "h0"
-                },
                 {
                     "sourceFile": "s0"
                 },

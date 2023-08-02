@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
 use common::download::DownloadedSourceFile;
-use common::{
-    models::{Document, Part, Rotation, TransformDocumentResult},
-    persistence::{files::IFileStorage, tempfiles::TempJobFileProvider},
-    util::routes::file_route,
-};
+use common::persistence::IFileStorage;
+use common::persistence::tempfiles::TempJobFileProvider;
+use common::models::{Document, Part, Rotation, TransformDocumentResult};
 use mime::Mime;
 use pdfium_render::prelude::*;
 use tracing::info;
@@ -45,7 +43,7 @@ impl ITransformService for TransformService {
                 .map(|document| -> Result<_, &'static str> {
                     let cache_ref: &mut Option<(&str, PdfDocument)> = &mut cache;
                     let bytes = {
-                        let mut new_doc = self.pdfium.create_new_pdf().map_err(|_| "Could not create document.")?;
+                        let mut new_doc = self.pdfium.create_new_pdf().map_err(|_| "Could not create empty document.")?;
                         for part in &document.parts {
                             if cache_ref.is_some() && cache_ref.as_ref().unwrap().0.eq(&part.source_file) {
                                 self.add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
@@ -54,7 +52,7 @@ impl ITransformService for TransformService {
                                 if self.is_supported_image(&source_file.content_type) {
                                     self.add_image(&mut new_doc, &source_file, &part)?;
                                 } else {
-                                    let source_doc = self.pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document.")?;
+                                    let source_doc = self.pdfium.load_pdf_from_file(&source_file.path, None).map_err(|_| "Could not create document from file.")?;
                                     info!("source {} has {} pages", &source_file.id, source_doc.pages().len());
                                     *cache_ref = Some((&part.source_file, source_doc));
                                     self.add_part(&mut new_doc, &cache_ref.as_ref().unwrap().1, part)?;
@@ -70,10 +68,10 @@ impl ITransformService for TransformService {
                     };
                     Ok(async move {
                         info!("generated {} is {} KiB", &document.id, bytes.len() / 1024);
-                        let file_id = self.storage.store_result_file(&job_id, &token, &document.id, Some("application/pdf"), bytes).await?;
+                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &document.id), &document.id, Some("application/pdf"), bytes).await?;
 
                         Ok::<TransformDocumentResult, &'static str>(TransformDocumentResult {
-                            download_url: file_route(&file_id, token),
+                            download_url: file_url,
                             id: document.id.to_string(),
                         })
                     })

@@ -74,7 +74,7 @@ impl DownloadService {
     async fn download_source_file(&self, client: &reqwest::Client, source_file: SourceFile, job_files: &TempJobFileProvider) -> Result<DownloadedSourceFile, &'static str> {
         let (path, content_type) = self.download_source(client, &source_file.uri, job_files, &source_file.content_type).await?;
         Ok(DownloadedSourceFile {
-            id: source_file.id,
+            id: source_file.id.clone(),
             path,
             content_type,
         })

@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use s3::{Bucket, creds::Credentials};
-use tokio_util::io::ReaderStream;
+use s3::{Bucket, creds::Credentials, region::Region};
 
-use crate::util::stream::{StreamReader, VecReader};
+use crate::util::stream::VecReader;
 
 use super::IFileStorage;
 
@@ -13,10 +12,11 @@ pub struct S3FileStorage {
 }
 
 impl S3FileStorage {
-    pub fn build(endpoint: String, region: String, access_key_id: String, secret_access_key: String, bucket: String, expire_seconds: u32) -> Result<Self, &'static str> {
+    pub async fn build(endpoint: String, region: String, access_key_id: String, secret_access_key: String, bucket: String, expire_seconds: u32) -> Result<Self, &'static str> {
         let credentials = Credentials::new(Some(&access_key_id), Some(&secret_access_key), None, None, None);
         let credentials = credentials.map_err(|_| "error with credentials")?;
-        let bucket = Bucket::new(&bucket, region.parse().map_err(|_| "invalid region")?, credentials).map_err(|_| "error with bucket")?;
+        let bucket = Bucket::new(&bucket, Region::Custom { region, endpoint }, credentials).map_err(|_| "error with bucket")?;
+        let bucket = bucket.with_path_style();
         Ok(S3FileStorage {
             bucket,
             expire_seconds,
