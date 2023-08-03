@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use common::{nats::{subscribe::{ISubscribeService, SubscribeService}}, convert::BaseConvertService, download::DownloadService, persistence::IJobPersistence, util::state::{NatsBaseSettings, S3BaseSettings, NatsBaseServiceCollection, StorageBaseServiceCollection}};
+use common::{nats::subscribe::{ISubscribeService, SubscribeService}, convert::BaseConvertService, download::DownloadService, persistence::IJobPersistence, util::state::{NatsBaseSettings, S3BaseSettings, StorageBaseServiceCollection}};
 use pdfium_render::prelude::Pdfium;
 
 use crate::{convert::ConvertService, transform::TransformService};

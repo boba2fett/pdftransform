@@ -1,7 +1,7 @@
 use crate::util::serialize::base64;
 use serde::{Deserialize, Serialize};
 
-use super::{JobModel, ToIdJson};
+use super::JobModel;
 
 pub type PreviewJobModel = JobModel<PreviewInput, PreviewResult>;
 
@@ -11,29 +11,24 @@ impl PreviewJobModel {
     }
 }
 
-// impl ToIdJson for PreviewJobModel {
-//     fn to_json(&self) -> Result<String, &'static str> {
-//         serde_json::to_string(self).map_err(|_| "job is not valid json")
-//     }
-//     fn get_id(&self) -> &str {
-//         &self.id
-//     }
-// }
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewInput {
     pub source_uri: String,
     pub source_mime_type: Option<String>,
+    pub pdf: bool,
+    pub png: bool,
+    pub attachments: bool,
+    pub signatures: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewResult {
     pub page_count: usize,
-    pub pages: Vec<PreviewPageResult>,
-    pub attachments: Vec<PreviewAttachmentResult>,
-    pub signatures: Vec<PreviewSignature>,
+    pub pages: Option<Vec<PreviewPageResult>>,
+    pub attachments: Option<Vec<PreviewAttachmentResult>>,
+    pub signatures: Option<Vec<PreviewSignature>>,
     pub protected: bool,
 }
 

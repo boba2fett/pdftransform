@@ -1,12 +1,13 @@
+use std::{sync::Arc, io::Cursor};
+
 use image::ImageFormat;
 use pdfium_render::{
     prelude::{PdfDocument, Pdfium},
     render_config::PdfRenderConfig,
 };
-use std::{io::Cursor, sync::Arc};
 
 use common::{
-    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature}, persistence::IFileStorage,
+    models::{PreviewAttachmentResult, PreviewPageResult, PreviewResult, PreviewSignature, PreviewJobModel}, persistence::IFileStorage,
 };
 
 #[cfg(feature = "static")]
@@ -21,7 +22,7 @@ pub fn init_pdfium() -> Result<Pdfium, &'static str> {
 
 #[async_trait::async_trait]
 pub trait IPreviewService: Send + Sync {
-    async fn get_preview(&self, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str>;
+    async fn get_preview(&self, job: &PreviewJobModel, source_file: Vec<u8>) -> Result<PreviewResult, &'static str>;
 }
 
 pub struct PreviewService {
@@ -31,70 +32,105 @@ pub struct PreviewService {
 
 #[async_trait::async_trait]
 impl IPreviewService for PreviewService {
-    async fn get_preview(&self, job_id: &str, token: &str, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
-        let results: (Vec<_>, Vec<_>, Vec<_>, bool) = {
+    async fn get_preview(&self, job: &PreviewJobModel, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
+        let results: (usize, Option<Vec<_>>, Option<Vec<_>>, Option<Vec<_>>, bool) = {
+            let job_id = &job.id;
             let document = self.pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
+            let page_count = document.pages().len() as usize;
+            let pages = match job.input.png {
+                true => {
+                    let render_config = PdfRenderConfig::new();
+                    Some(document
+                        .pages()
+                        .iter()
+                        .enumerate()
+                        .map(|(index, page)| -> Result<_, &'static str> {
+                            let mut bytes: Vec<u8> = Vec::new();
+                            page.render_with_config(&render_config)
+                                .map_err(|_| "Could not render to image.")?
+                                .as_image()
+                                .as_rgba8()
+                                .ok_or("Could not render image.")?
+                                .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+                                .map_err(|_| "Could not save image.")?;
+                            let page_number = format!("{}", index + 1);
+                            let text = page.text().map_err(|_| "")?.all();
 
-            let render_config = PdfRenderConfig::new();
-            let pages = document
-                .pages()
-                .iter()
-                .enumerate()
-                .map(|(index, page)| -> Result<_, &'static str> {
-                    let mut bytes: Vec<u8> = Vec::new();
-                    page.render_with_config(&render_config)
-                        .map_err(|_| "Could not render to image.")?
-                        .as_image()
-                        .as_rgba8()
-                        .ok_or("Could not render image.")?
-                        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
-                        .map_err(|_| "Could not save image.")?;
-                    let page_number = format!("{}", index + 1);
-                    let text = page.text().map_err(|_| "")?.all();
-
-                    Ok(async move {
-                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.png", page_number), Some("image/png"), bytes).await?;
-                        Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
-                            download_url: file_url,
-                            text,
+                            Ok(async move {
+                                let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.png", page_number), Some("image/png"), bytes).await?;
+                                Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
+                                    download_url: file_url,
+                                    text,
+                                })
+                            })
                         })
-                    })
-                })
-                .collect();
-            let attachments: Vec<_> = document
-                .attachments()
-                .iter()
-                .map(|attachment| -> Result<_, &'static str> {
-                    let name = attachment.name();
-                    let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
+                        .collect())
+                    },
+                false => None,
+            };
 
-                    Ok(async move {
-                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &name), &name, None, bytes).await?;
-                        Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
-                            name,
-                            download_url: file_url,
+            let attachments = match job.input.png {
+                true => {
+                    Some(document
+                        .attachments()
+                        .iter()
+                        .map(|attachment| -> Result<_, &'static str> {
+                            let name = attachment.name();
+                            let bytes = attachment.save_to_bytes().map_err(|_| "Could not save attachment.")?;
+        
+                            Ok(async move {
+                                let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &name), &name, None, bytes).await?;
+                                Ok::<PreviewAttachmentResult, &'static str>(PreviewAttachmentResult {
+                                    name,
+                                    download_url: file_url,
+                                })
+                            })
                         })
-                    })
-                })
-                .collect();
-            (pages, attachments, self.signatures(&document), self.is_protected(&document).unwrap_or(false))
+                        .collect())
+                    },
+                false => None,
+            };
+
+            let signatures = match job.input.signatures {
+                true => Some(self.signatures(&document)),
+                false => None,
+            };
+
+            let protected = self.is_protected(&document).unwrap_or(false);
+            
+            (page_count, pages, attachments, signatures, protected)
         };
-        let mut preview_page_results = Vec::with_capacity(results.0.len());
-        for result in results.0 {
-            let value = result?.await?;
-            preview_page_results.push(value);
-        }
-        let mut preview_attachment_results = Vec::with_capacity(results.1.len());
-        for result in results.1 {
-            let value = result?.await?;
-            preview_attachment_results.push(value);
-        }
+
+        let pages = match results.1 {
+            None => None,
+            Some(pages) => {
+                let mut ready_pages = Vec::with_capacity(pages.len());
+                for result in pages {
+                    let value = result?.await?;
+                    ready_pages.push(value);
+                }
+                Some(ready_pages)
+            }
+        };
+
+        let attachments = match results.2 {
+            None => None,
+            Some(attachments) => {
+                let mut ready_attachments = Vec::with_capacity(attachments.len());
+                for result in attachments {
+                    let value = result?.await?;
+                    ready_attachments.push(value);
+                }
+                Some(ready_attachments)
+            }
+        };
+
         Ok(PreviewResult {
-            page_count: preview_page_results.len(),
-            pages: preview_page_results,
-            attachments: preview_attachment_results,
-            signatures: results.2,
-            protected: results.3,
+            page_count: results.0,
+            pages,
+            attachments,
+            signatures: results.3,
+            protected: results.4,
         })
     }
 }

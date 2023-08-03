@@ -47,6 +47,10 @@ pub async fn create_preview_job(State(services): State<Services>, Json(create_jo
         input: PreviewInput {
             source_uri: create_job.source_uri,
             source_mime_type: create_job.source_mime_type,
+            pdf: create_job.pdf.unwrap_or(true),
+            png: create_job.png.unwrap_or(true),
+            attachments: create_job.attachments.unwrap_or(true),
+            signatures: create_job.signatures.unwrap_or(true),
         },
         result: None,
     };

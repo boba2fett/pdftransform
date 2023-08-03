@@ -33,7 +33,7 @@ impl IWorkerService for ConvertService {
             match failed {
                 None => {
                     let source_files: Vec<&DownloadedSourceFile> = source_files.iter().map(|source_file| source_file.as_ref().unwrap()).collect();
-                    let results: Result<_, &str> = self.transform_service.get_transformation(&job_id, &job_model.token, &job_model.input.documents, source_files, &job_files).await;
+                    let results: Result<_, &str> = self.transform_service.get_transformation(&job_id, &job_model.input.documents, source_files, &job_files).await;
                     match results {
                         Ok(results) => self.base.ready(&mut job_model, &client, results).await,
                         Err(err) => self.base.error(&mut job_model, &client, err).await,

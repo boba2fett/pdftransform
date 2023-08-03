@@ -21,7 +21,7 @@ pub fn init_pdfium() -> Result<Pdfium, &'static str> {
 #[async_trait::async_trait]
 pub trait ITransformService: Send + Sync {
     async fn get_transformation<'a>(
-        &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
+        &self, job_id: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
     ) -> Result<Vec<TransformDocumentResult>, &'static str>;
 }
 
@@ -33,7 +33,7 @@ pub struct TransformService {
 #[async_trait::async_trait]
 impl ITransformService for TransformService {
     async fn get_transformation<'a>(
-        &self, job_id: &str, token: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
+        &self, job_id: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
     ) -> Result<Vec<TransformDocumentResult>, &'static str> {
         let results: Vec<_> = {
             let mut cache: Option<(&str, PdfDocument)> = None;

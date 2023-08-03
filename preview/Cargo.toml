@@ -7,6 +7,7 @@ edition = "2021"
 common = { path = "../common" }
 async-trait = "0.1.72"
 tokio = { version = "1.29.1", features = ["rt-multi-thread"]}
+futures = {version = "0.3.28"}
 reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
 pdfium-render = {version = "0.8.7", features = ["sync"]}
 image = "0.24.6"

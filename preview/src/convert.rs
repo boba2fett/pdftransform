@@ -3,7 +3,6 @@ use std::sync::Arc;
 use common::convert::BaseConvertService;
 use common::models::PreviewJobModel;
 use common::nats::subscribe::{IWorkerService, WorkError};
-use common::persistence::IJobPersistence;
 use tracing::info;
 
 use common::download::IDownloadService;
@@ -32,7 +31,7 @@ impl IWorkerService for ConvertService {
 
             match source_file {
                 Ok(source_file) => {
-                    let result: Result<_, &str> = self.preview_service.get_preview(&job_id, &job_model.token, source_file.to_vec()).await;
+                    let result: Result<_, &str> = self.preview_service.get_preview(&job_model, source_file.to_vec()).await;
                     match result {
                         Ok(result) => self.base.ready(&mut job_model, &client, result).await,
                         Err(err) => self.base.error(&mut job_model, &client, err).await,
