@@ -6,7 +6,6 @@ use transform::{state::ServiceCollection, transform::init_pdfium};
 
 #[tokio::main]
 async fn main() {
-    dotenv::from_path("./.env").ok();
     let subscriber = tracing_subscriber::fmt().json().finish();
     tracing::subscriber::set_global_default(subscriber).expect("Could not init tracing.");
     
@@ -93,8 +92,8 @@ fn get_s3_settings(max_age: Duration) -> S3BaseSettings {
     S3BaseSettings {
         endpoint: env::var("S3_ENDPOINT").unwrap_or_else(|_| "http://localhost:9000".to_string()),
         region: env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
-        access_key_id: env::var("S3_ACCESS_KEY_ID").unwrap_or_else(|_| "access_key".to_string()),
-        secret_access_key: env::var("S3_SECRET_ACCESS_KEY").unwrap_or_else(|_| "secret_key".to_string()),
+        access_key_id: env::var("S3_ACCESS_KEY_ID").unwrap_or_else(|_| "minio123".to_string()),
+        secret_access_key: env::var("S3_SECRET_ACCESS_KEY").unwrap_or_else(|_| "minio123".to_string()),
         bucket: env::var("S3_BUCKET").unwrap_or_else(|_| "bucket".to_string()),
         expire_seconds: max_age.as_secs() as u32,
     }

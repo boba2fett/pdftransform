@@ -20,4 +20,4 @@ tokio-stream = "0.1.14"
 async-nats = "0.31.0"
 reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
 bytes = "1.4.0"
-rust-s3 = { version = "0.33", features = ["with-tokio"]}
+rust-s3 = { version = "0.33", default-features = false, features = ["with-tokio", "tokio-rustls-tls"]}

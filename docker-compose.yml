@@ -1,46 +1,66 @@
 version: '3'
 services:
   nats:
-    image: nats:scratch
-    command: "-js -DV"
-  mongodb:
-    image: mongo:6.0.5
-    # ports:
-    #   - 27017:27017
-    depends_on:
-      - nats
+    image: nats:2.9.20-scratch
+    command: "-js -DV -sd /data"
+    volumes:
+      - ./data/nats/:/data
+    ports:
+      - 4222:4222
+  minio:
+    image: quay.io/minio/minio:RELEASE.2023-07-21T21-12-44Z
+    entrypoint: sh
+    command: -c 'mkdir -p /data/bucket && minio server --console-address ":9001" /data'
+    volumes:
+      - ./data/minio/:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_BUCKET_NAME: bucket
+      MINIO_REGION: us-east-1 # cant be changed
+      MINIO_ROOT_USER: minio123
+      MINIO_ROOT_PASSWORD: minio123
   service:
     build:
       context: .
       dockerfile: ./service/Dockerfile
     environment:
-      MONGO_URI: mongodb://mongodb:27017
       NATS_URI: nats://nats:4222
     ports:
       - 8000:8000
     depends_on:
-      - mongodb
       - nats
   transform:
     build:
       context: .
       dockerfile: ./transform/Dockerfile
     environment:
-      MONGO_URI: mongodb://mongodb:27017
-      NATS_URI: nats://nats:4222
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: bucket
+      S3_ACCESS_KEY_ID: minio123
+      S3_SECRET_ACCESS_KEY: minio123
+      NATS_URI: nats://localhost:4222
     depends_on:
-      - mongodb
       - nats
+      - minio
+    network_mode: host
   preview:
     build:
       context: .
       dockerfile: ./preview/Dockerfile
     environment:
-      MONGO_URI: mongodb://mongodb:27017
-      NATS_URI: nats://nats:4222
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: bucket
+      S3_ACCESS_KEY_ID: minio123
+      S3_SECRET_ACCESS_KEY: minio123
+      NATS_URI: nats://localhost:4222
     depends_on:
-      - mongodb
       - nats
+      - minio
+    network_mode: host
   # test:
   #   build:
   #     context: .
