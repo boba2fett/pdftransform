@@ -26,8 +26,11 @@ async fn main() {
     };
 
     let s3_settings = get_s3_settings(max_age);
+    
+    let subjects = vec![format!("{}.*", &stream)];
+    let filter = vec![format!("{}.{}", &stream, &consumer)];
 
-    let worker = ServiceCollection::build(nats_settings, stream, parallelism, pdfium, s3_settings, consumer, max_deliver, consumer_ack_wait).await.unwrap();
+    let worker = ServiceCollection::build(nats_settings, stream, subjects, parallelism, pdfium, s3_settings, consumer, filter, max_deliver, consumer_ack_wait).await.unwrap();
     worker.subscribe_service.subscribe().await.unwrap();
 }
 
