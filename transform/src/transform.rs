@@ -23,6 +23,7 @@ pub trait ITransformService: Send + Sync {
     async fn get_transformation<'a>(
         &self, job_id: &str, documents: &Vec<Document>, source_files: Vec<&DownloadedSourceFile>, job_files: &TempJobFileProvider,
     ) -> Result<Vec<TransformDocumentResult>, &'static str>;
+    fn is_supported_image(&self, content_type: &Mime) -> bool;
 }
 
 pub struct TransformService {
@@ -84,6 +85,10 @@ impl ITransformService for TransformService {
             document_results.push(value);
         }
         Ok(document_results)
+    }
+
+    fn is_supported_image(&self, content_type: &Mime) -> bool {
+        content_type.eq(&mime::IMAGE_PNG) || content_type.eq(&mime::IMAGE_JPEG) || content_type.eq(&mime::IMAGE_GIF) || content_type.eq(&mime::IMAGE_BMP)
     }
 }
 
@@ -170,9 +175,5 @@ impl TransformService {
             }
         }
         Ok(())
-    }
-
-    fn is_supported_image(&self, content_type: &Mime) -> bool {
-        content_type.eq(&mime::IMAGE_PNG) || content_type.eq(&mime::IMAGE_JPEG) || content_type.eq(&mime::IMAGE_GIF) || content_type.eq(&mime::IMAGE_BMP)
     }
 }

@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::sync::Arc;
 
 use common::convert::BaseConvertService;
@@ -5,6 +6,7 @@ use common::download::{IDownloadService, DownloadedSourceFile};
 use common::models::TransformJobModel;
 use common::nats::subscribe::{WorkError, IWorkerService};
 use common::persistence::tempfiles::TempJobFileProvider;
+use mime::Mime;
 use tracing::info;
 
 use crate::transform::ITransformService;
@@ -24,6 +26,23 @@ impl IWorkerService for ConvertService {
         if let Ok(Some(job_model)) = job_model {
             let mut job_model = TransformJobModel::from_json_slice(&job_model).map_err(|_| WorkError::NoRetry)?;
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
+
+            let files_for_conversion: Vec<_> = job_model.input.source_files.iter().filter(|source_file| {
+                if let Some(mime_type) = &source_file.content_type {
+                    if let Ok(mime_type) = Mime::from_str(mime_type) {
+                        return !mime_type.eq(&mime::APPLICATION_PDF) && !self.transform_service.is_supported_image(&mime_type);
+                    }
+                }
+                false
+            }).collect();
+
+            if files_for_conversion.len() > 0 {
+                for file in files_for_conversion {
+                    
+                }
+                return Ok(());
+            }
+
             let job_files = TempJobFileProvider::build(&job_id).await;
             let source_files = self.download_service.download_source_files(&client, job_model.input.source_files.clone(), &job_files).await;
             info!("Downloaded all files for job");
