@@ -30,6 +30,7 @@ pub struct PreviewResult {
     pub attachments: Option<Vec<PreviewAttachmentResult>>,
     pub signatures: Option<Vec<PreviewSignature>>,
     pub protected: bool,
+    pub pdf: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

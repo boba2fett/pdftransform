@@ -33,8 +33,9 @@ pub struct PreviewService {
 #[async_trait::async_trait]
 impl IPreviewService for PreviewService {
     async fn get_preview(&self, job: &PreviewJobModel, source_file: Vec<u8>) -> Result<PreviewResult, &'static str> {
-        let results: (usize, Option<Vec<_>>, Option<Vec<_>>, Option<Vec<_>>, bool) = {
+        let results: (usize, Option<_>, Option<Vec<_>>, Option<Vec<_>>, Option<Vec<_>>, bool) = {
             let job_id = &job.id;
+
             let document = self.pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
             let page_count = document.pages().len() as usize;
             let pages = match job.input.png {
@@ -97,11 +98,19 @@ impl IPreviewService for PreviewService {
             };
 
             let protected = self.is_protected(&document).unwrap_or(false);
+
+            let download_url = match job.input.pdf {
+                true => Some(async move {
+                    let file_url = self.storage.store_result_file(&job_id, "input.pdf", Some("application/pdf"), document.save_to_bytes().map_err(|_| "could not save")?).await?;
+                    Ok::<_, &'static str>(file_url)
+                }),
+                false => None,
+            };
             
-            (page_count, pages, attachments, signatures, protected)
+            (page_count, download_url, pages, attachments, signatures, protected)
         };
 
-        let pages = match results.1 {
+        let pages = match results.2 {
             None => None,
             Some(pages) => {
                 let mut ready_pages = Vec::with_capacity(pages.len());
@@ -113,7 +122,7 @@ impl IPreviewService for PreviewService {
             }
         };
 
-        let attachments = match results.2 {
+        let attachments = match results.3 {
             None => None,
             Some(attachments) => {
                 let mut ready_attachments = Vec::with_capacity(attachments.len());
@@ -125,12 +134,18 @@ impl IPreviewService for PreviewService {
             }
         };
 
+        let pdf = match results.1 {
+            None => None,
+            Some(url) => Some(url.await?)
+        };
+
         Ok(PreviewResult {
             page_count: results.0,
             pages,
             attachments,
-            signatures: results.3,
-            protected: results.4,
+            pdf,
+            signatures: results.4,
+            protected: results.5,
         })
     }
 }
