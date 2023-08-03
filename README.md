@@ -11,6 +11,7 @@
 
 ## TODOs
 
+- reimplement preview/sync
 - make images work better (startpage?, endpage?)
 - support tiffs
 - make preview faster by opting out of features

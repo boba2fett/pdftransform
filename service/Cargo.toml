@@ -1,0 +1,27 @@
+[package]
+name = "service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common = { path = "../common" }
+axum = "0.6.19"
+axum-server = { version = "0.5.1", features = ["tls-rustls"]}
+async-trait = "0.1.72"
+bson = { version = "2.6.1", features = ["chrono-0_4"] }
+tokio = { version = "1.29.1", features = ["rt-multi-thread"]}
+chrono = "0.4.26"
+serde = { version = "1.0.177", features = ["derive"] }
+serde_repr = "0.1.16"
+reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+futures = {version = "0.3.28"}
+rand = "0.8.5"
+base64 = "0.21.2"
+mime = "0.3.17"
+tokio-util = "0.7.8"
+tokio-stream = "0.1.14"
+bytes = "1.4.0"
+tower = { version = "0.4.13", features = ["timeout"] }
+tower-http = { version = "0.4.3", features = ["trace"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["json"] }

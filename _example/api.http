@@ -1,0 +1,46 @@
+@endpoint = http://localhost:8000
+@job = /transform/642919078d9fef56406d02e4?token=EOmW8UkcDuwUxs8pCDJJwKQAqksNfH
+###
+GET {{endpoint}}
+###
+GET {{endpoint}}/health
+###
+POST {{endpoint}}/transform
+Content-Type: application/json
+
+< transform.json
+###
+POST {{endpoint}}/transform
+Content-Type: application/json
+
+< transform_many.json
+###
+POST {{endpoint}}/preview
+Content-Type: application/json
+
+< preview.json
+###
+GET {{endpoint}}{{job}}
+###
+POST {{endpoint}}/preview/sync
+Content-Type: application/pdf
+
+< samples/pdf-example-encryption.pdf
+###
+POST {{endpoint}}/preview/sync
+Content-Type: application/pdf
+
+< samples/sample06.pdf
+###
+POST {{endpoint}}/preview/sync
+Content-Type: application/pdf
+
+< samples/example_041.pdf
+
+###
+POST http://mypc:8001/preview-callback
+Content-Type: application/json
+
+{
+    "as": "asd"
+}
