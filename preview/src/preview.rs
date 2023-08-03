@@ -47,13 +47,13 @@ impl IPreviewService for PreviewService {
                         .as_image()
                         .as_rgba8()
                         .ok_or("Could not render image.")?
-                        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Jpeg)
+                        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
                         .map_err(|_| "Could not save image.")?;
                     let page_number = format!("{}", index + 1);
                     let text = page.text().map_err(|_| "")?.all();
 
                     Ok(async move {
-                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.jpeg", page_number), Some("image/jpeg"), bytes).await?;
+                        let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.png", page_number), Some("image/png"), bytes).await?;
                         Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                             download_url: file_url,
                             text,
