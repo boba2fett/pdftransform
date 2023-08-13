@@ -9,12 +9,14 @@ use common::persistence::tempfiles::TempJobFileProvider;
 use mime::Mime;
 use tracing::info;
 
+use crate::file_converter::IFileConverterService;
 use crate::transform::ITransformService;
 
 pub struct ConvertService {
     pub base: Arc<BaseConvertService>,
     pub transform_service: Arc<dyn ITransformService>,
     pub download_service: Arc<dyn IDownloadService>,
+    pub file_converter_service: Arc<dyn IFileConverterService>,
 }
 
 #[async_trait::async_trait]
@@ -38,7 +40,7 @@ impl IWorkerService for ConvertService {
 
             if files_for_conversion.len() > 0 {
                 for file in files_for_conversion {
-                    
+                    self.file_converter_service.convert(job_id, file).await; //TODO
                 }
                 return Ok(());
             }

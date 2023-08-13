@@ -7,6 +7,9 @@ pub use transform::*;
 mod jobs;
 pub use jobs::*;
 
+mod conversion;
+pub use conversion::*;
+
 mod nats;
 pub use nats::*;
 

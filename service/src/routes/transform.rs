@@ -51,7 +51,7 @@ pub async fn create_transform_job(State(services): State<Services>, Json(create_
     if let Err(e) = services.job_persistence.put(&job).await {
         return Err((StatusCode::INTERNAL_SERVER_ERROR, e))
     }
-    match services.transform_publish_service.publish(&job.id).await {
+    match services.transform_publish_service.publish_job(&job.id).await {
         Ok(_) => Ok(Json(job.to_dto())),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
     }

@@ -10,7 +10,9 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("Could not init tracing.");
     
     let nats_uri = get_nats();
-    let stream = get_stream();
+    let convert_stream = get_convert_stream();
+    let job_stream = get_job_stream();
+    let aggregate_stream = get_aggregate_stream();
     let consumer = get_consumer();
     let consumer_ack_wait = get_consumer_ack_wait();
     let bucket = get_bucket();
@@ -27,10 +29,10 @@ async fn main() {
 
     let s3_settings = get_s3_settings(max_age);
     
-    let subjects = vec![format!("{}.*", &stream)];
-    let filter = vec![format!("{}.{}", &stream, &consumer)];
+    let subjects = vec![format!("{}.*", &job_stream)];
+    let filter = vec![format!("{}.{}", &job_stream, &consumer)];
 
-    let worker = ServiceCollection::build(nats_settings, stream, subjects, parallelism, pdfium, s3_settings, consumer, filter, max_deliver, consumer_ack_wait).await.unwrap();
+    let worker = ServiceCollection::build(nats_settings, job_stream, subjects, parallelism, pdfium, s3_settings, consumer, filter, max_deliver, consumer_ack_wait, convert_stream, aggregate_stream).await.unwrap();
     worker.subscribe_service.subscribe().await.unwrap();
 }
 
@@ -38,8 +40,16 @@ fn get_nats() -> String {
     env::var("NATS_URI").unwrap_or_else(|_| "nats://localhost:4222".to_string())
 }
 
-fn get_stream() -> String {
-    env::var("NATS_JETSTREAM_QUEUE").unwrap_or_else(|_| "newJob".to_string())
+fn get_job_stream() -> String {
+    env::var("NATS_JETSTREAM_QUEUE_JOB").unwrap_or_else(|_| "newJob".to_string())
+}
+
+fn get_convert_stream() -> String {
+    env::var("NATS_JETSTREAM_QUEUE_CONVERT").unwrap_or_else(|_| "convert".to_string())
+}
+
+fn get_aggregate_stream() -> String {
+    env::var("NATS_JETSTREAM_QUEUE_CONVERT").unwrap_or_else(|_| "transformaggregate".to_string())
 }
 
 fn get_consumer() -> String {

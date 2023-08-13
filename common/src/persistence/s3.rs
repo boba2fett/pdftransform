@@ -1,6 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use s3::{Bucket, creds::Credentials, region::Region};
+use tokio::{fs::File, io::AsyncRead};
 
 use crate::util::stream::VecReader;
 
@@ -30,7 +31,23 @@ impl IFileStorage for S3FileStorage {
         let mut vec_reader = VecReader {
             vec: source,
         };
-        self.bucket.put_object_stream(&mut vec_reader, key).await.map_err(|_| "could not put blob")?;
+        self.store_result(key, file_name, mime_type, &mut vec_reader).await
+    }
+
+    async fn store_result_file_path(&self, key: &str, file_name: &str, mime_type: Option<&str>, source: &PathBuf) -> Result<String, &'static str> {
+        let mut file = File::open(source).await.map_err(|_| "file not found")?;
+        self.store_result(key, file_name, mime_type, &mut file).await
+    }
+}
+
+impl S3FileStorage {
+    async fn store_result<R>(&self, key: &str, file_name: &str, mime_type: Option<&str>, mut source: R) -> Result<String, &'static str> where R: AsyncRead + Unpin, {
+        if let Some(mime_type) = mime_type {
+            self.bucket.put_object_stream_with_content_type(&mut source, key, &mime_type).await.map_err(|_| "could not put blob")?;
+        }
+        else {
+            self.bucket.put_object_stream(&mut source, key).await.map_err(|_| "could not put blob")?;
+        }
         let mut custom_queries = HashMap::new();
         custom_queries.insert(
             "response-content-disposition".into(),

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use bytes::Bytes;
 
 use crate::models::ToIdJson;
@@ -11,4 +13,5 @@ pub trait IJobPersistence: Send + Sync {
 #[async_trait::async_trait]
 pub trait IFileStorage: Send + Sync {
     async fn store_result_file(&self, key: &str, file_name: &str, mime_type: Option<&str>, source: Vec<u8>) -> Result<String, &'static str>;
+    async fn store_result_file_path(&self, key: &str, file_name: &str, mime_type: Option<&str>, source: &PathBuf) -> Result<String, &'static str>;
 }
