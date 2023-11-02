@@ -4,20 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = { version = "0.4.26", features = ["serde"]}
-serde = { version = "1.0.177", features = ["derive"] }
-serde_repr = "0.1.16"
-serde_json = "1.0.104"
-async-trait = "0.1.72"
-tokio = { version = "1.29.1", features = ["fs", "rt-multi-thread"]}
+chrono = { version = "0.4.31", features = ["serde"]}
+serde = { version = "1.0.190", features = ["derive"] }
+serde_repr = "0.1.17"
+serde_json = "1.0.108"
+async-trait = "0.1.74"
+tokio = { version = "1.33.0", features = ["fs", "rt-multi-thread"]}
 mime = "0.3.17"
-tracing = "0.1.37"
-futures = {version = "0.3.28"}
+tracing = "0.1.40"
+futures = {version = "0.3.29"}
 rand = "0.8.5"
-base64 = "0.21.2"
-tokio-util = "0.7.8"
+base64 = "0.21.5"
+tokio-util = "0.7.10"
 tokio-stream = "0.1.14"
-async-nats = { version = "0.31.0", features = ["server_2_10"]}
-reqwest = {version = "0.11.18", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
-bytes = "1.4.0"
+async-nats = { version = "0.32.1", features = ["server_2_10"]}
+reqwest = {version = "0.11.22", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+bytes = "1.5.0"
 rust-s3 = { version = "0.33", default-features = false, features = ["with-tokio", "tokio-rustls-tls"]}
