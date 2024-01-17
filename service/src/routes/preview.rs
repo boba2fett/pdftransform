@@ -51,6 +51,9 @@ pub async fn create_preview_job(State(services): State<Services>, Json(create_jo
             png: create_job.png.unwrap_or(true),
             attachments: create_job.attachments.unwrap_or(true),
             signatures: create_job.signatures.unwrap_or(true),
+            text: create_job.text.unwrap_or(true),
+            start_page_number: create_job.start_page_number,
+            end_page_number: create_job.end_page_number,
         },
         result: None,
     };

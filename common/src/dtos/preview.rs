@@ -13,8 +13,11 @@ pub struct CreatePreviewJobDto {
     pub source_mime_type: Option<String>,
     pub pdf: Option<bool>,
     pub png: Option<bool>,
+    pub text: Option<bool>,
     pub attachments: Option<bool>,
     pub signatures: Option<bool>,
+    pub start_page_number: Option<u16>,
+    pub end_page_number: Option<u16>,
 }
 
 impl GetSelfRoute for PreviewJobModel {

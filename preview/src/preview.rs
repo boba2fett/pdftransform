@@ -32,27 +32,47 @@ impl IPreviewService for PreviewService {
 
             let document = self.pdfium.load_pdf_from_byte_vec(source_file, None).map_err(|_| "Could not open document.")?;
             let page_count = document.pages().len() as usize;
-            let pages = match job.input.png {
+            let pages = match job.input.png || job.input.text {
                 true => {
+                    let start_page_number = job.input.start_page_number.unwrap_or(1);
+                    let end_page_number = job.input.end_page_number.unwrap_or(document.pages().len());
+                    self.validate_pages(start_page_number, end_page_number, &document)?;
+
                     let render_config = PdfRenderConfig::new();
                     Some(document
                         .pages()
                         .iter()
+                        .skip((start_page_number - 1) as usize)
+                        .take((end_page_number - start_page_number + 1) as usize)
                         .enumerate()
                         .map(|(index, page)| -> Result<_, &'static str> {
-                            let mut bytes: Vec<u8> = Vec::new();
-                            page.render_with_config(&render_config)
-                                .map_err(|_| "Could not render to image.")?
-                                .as_image()
-                                .as_rgba8()
-                                .ok_or("Could not render image.")?
-                                .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
-                                .map_err(|_| "Could not save image.")?;
+                            let image = match job.input.png {
+                                true => {
+                                    let mut bytes: Vec<u8> = Vec::new();
+                                    page.render_with_config(&render_config)
+                                        .map_err(|_| "Could not render to image.")?
+                                        .as_image()
+                                        .as_rgba8()
+                                        .ok_or("Could not render image.")?
+                                        .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+                                        .map_err(|_| "Could not save image.")?;
+                                    Some(bytes)
+                                },
+                                false => None,
+                            };
+
                             let page_number = format!("{}", index + 1);
-                            let text = page.text().map_err(|_| "")?.all();
+
+                            let text = match job.input.text {
+                                true => Some(page.text().map_err(|_|"")?.all()),
+                                false => None,
+                            };
 
                             Ok(async move {
-                                let file_url = self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.png", page_number), Some("image/png"), bytes).await?;
+                                let file_url = match job.input.png {
+                                    true => Some(self.storage.store_result_file(&format!("{}-{}", &job_id, &page_number), &format!("{}.png", page_number), Some("image/png"), image.unwrap()).await?),
+                                    false => None,
+                                };
                                 Ok::<PreviewPageResult, &'static str>(PreviewPageResult {
                                     download_url: file_url,
                                     text,
@@ -145,6 +165,17 @@ impl IPreviewService for PreviewService {
 }
 
 impl PreviewService {
+    fn validate_pages(&self, start_page_number: u16, end_page_number: u16, source_document: &PdfDocument) -> Result<(), &'static str> {
+        if start_page_number > end_page_number {
+            return Err("Start page number can't be greater than end page number.");
+        }
+        let pages = source_document.pages();
+        if end_page_number > pages.len() {
+            return Err("End page number exceeds pages of document.");
+        }
+        Ok(())
+    }
+
     fn is_protected(&self, document: &PdfDocument) -> Result<bool, &'static str> {
         let permissions = document.permissions();
         let protected = !permissions.can_add_or_modify_text_annotations().map_err(|_| "Could not determine permissions.")?

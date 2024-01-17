@@ -18,8 +18,11 @@ pub struct PreviewInput {
     pub source_mime_type: Option<String>,
     pub pdf: bool,
     pub png: bool,
+    pub text: bool,
     pub attachments: bool,
     pub signatures: bool,
+    pub start_page_number: Option<u16>,
+    pub end_page_number: Option<u16>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -45,8 +48,8 @@ pub struct PreviewSignature {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPageResult {
-    pub download_url: String,
-    pub text: String,
+    pub download_url: Option<String>,
+    pub text: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
