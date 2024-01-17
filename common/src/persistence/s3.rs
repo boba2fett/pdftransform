@@ -45,8 +45,7 @@ impl S3FileStorage {
     async fn store_result<R>(&self, key: &str, file_name: &str, mime_type: Option<&str>, mut source: R) -> Result<String, &'static str> where R: AsyncRead + Unpin, {
         info!("Storing {}", &key);
         if let Some(mime_type) = mime_type {
-            self.bucket.put_object_stream_with_content_type(&mut source, key, &mime_type).await.map_err(
-                |x| "could not put blob")?;
+            self.bucket.put_object_stream_with_content_type(&mut source, key, &mime_type).await.map_err(|_| "could not put blob")?;
         }
         else {
             self.bucket.put_object_stream(&mut source, key).await.map_err(|_| "could not put blob")?;
