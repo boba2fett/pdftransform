@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
-axum = "0.6.20"
-tokio = { version = "1.33.0", features = ["fs"]}
+axum = "0.7.4"
+tokio = { version = "1.35.1", features = ["fs"]}

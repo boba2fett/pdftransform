@@ -9,7 +9,7 @@ use chrono::Utc;
 use common::dtos::CreateTransformJobDto;
 use common::models::{TransformJobModel, JobStatus, TransformInput};
 use common::util::random;
-use reqwest::StatusCode;
+use axum::http::StatusCode;
 use std::collections::HashMap;
 
 use crate::state::Services;

@@ -5,15 +5,11 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
-async-trait = "0.1.74"
-tokio = { version = "1.33.0", features = ["rt-multi-thread"]}
-reqwest = {version = "0.11.22", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
-pdfium-render = {version = "0.8.14", features = ["sync"]}
-image = "0.24.7"
+async-trait = "0.1.77"
+tokio = { version = "1.35.1", features = ["rt-multi-thread"]}
+reqwest = {version = "0.11.23", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+pdfium-render = {version = "0.8.17", features = ["sync"]}
+image = "0.24.8"
 mime = "0.3.17"
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.17", features = ["json"] }
-
-[features]
-
-static = ["pdfium-render/static", "pdfium-render/libc++"]
+tracing-subscriber = { version = "0.3.18", features = ["json"] }

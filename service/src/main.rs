@@ -3,7 +3,7 @@ use axum::error_handling::HandleErrorLayer;
 use common::util::state::NatsBaseSettings;
 use service::state::ServiceCollection;
 use service::routes;
-use reqwest::StatusCode;
+use axum::http::StatusCode;
 use tower_http::trace::TraceLayer;
 use tracing::info;
 use std::env;
@@ -41,10 +41,10 @@ async fn main() {
             .layer(TimeoutLayer::new(Duration::from_secs(59))),
         );
 
-    let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 8000);
-    info!("listening on {}", &addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 8000);
+        info!("listening on {}", &addr);
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }

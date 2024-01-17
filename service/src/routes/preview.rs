@@ -9,7 +9,7 @@ use chrono::Utc;
 use common::dtos::CreatePreviewJobDto;
 use common::models::{PreviewJobModel, PreviewInput, JobStatus};
 use common::util::random;
-use reqwest::StatusCode;
+use axum::http::StatusCode;
 use std::collections::HashMap;
 
 use crate::state::Services;

@@ -29,21 +29,21 @@ impl IWorkerService for ConvertService {
             let mut job_model = TransformJobModel::from_json_slice(&job_model).map_err(|_| WorkError::NoRetry)?;
             let client = reqwest::Client::builder().danger_accept_invalid_certs(true).build().unwrap();
 
-            let files_for_conversion: Vec<_> = job_model.input.source_files.iter().filter(|source_file| {
-                if let Some(mime_type) = &source_file.content_type {
-                    if let Ok(mime_type) = Mime::from_str(mime_type) {
-                        return !mime_type.eq(&mime::APPLICATION_PDF) && !self.transform_service.is_supported_image(&mime_type);
-                    }
-                }
-                false
-            }).collect();
+            // let files_for_conversion: Vec<_> = job_model.input.source_files.iter().filter(|source_file| {
+            //     if let Some(mime_type) = &source_file.content_type {
+            //         if let Ok(mime_type) = Mime::from_str(mime_type) {
+            //             return !mime_type.eq(&mime::APPLICATION_PDF) && !self.transform_service.is_supported_image(&mime_type);
+            //         }
+            //     }
+            //     false
+            // }).collect();
 
-            if files_for_conversion.len() > 0 {
-                for file in files_for_conversion {
-                    self.file_converter_service.convert(job_id, file).await; //TODO
-                }
-                return Ok(());
-            }
+            // if files_for_conversion.len() > 0 {
+            //     for file in files_for_conversion {
+            //         self.file_converter_service.convert(job_id, file).await; //TODO
+            //     }
+            //     return Ok(());
+            // }
 
             let job_files = TempJobFileProvider::build(&job_id).await;
             let source_files = self.download_service.download_source_files(&client, job_model.input.source_files.clone(), &job_files).await;

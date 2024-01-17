@@ -1,4 +1,4 @@
-FROM rust:1.73.0-slim-bookworm as build
+FROM rust:1.75.0-slim-bookworm as build
 
 WORKDIR /app
 ENV RUST_BACKTRACE=1

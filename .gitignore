@@ -4,3 +4,4 @@ libpdfium.so
 pdfium_static
 data
 .env
+cache

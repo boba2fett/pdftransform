@@ -5,23 +5,23 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
-axum = "0.6.20"
-axum-server = { version = "0.5.1", features = ["tls-rustls"]}
-async-trait = "0.1.74"
-bson = { version = "2.7.0", features = ["chrono-0_4"] }
-tokio = { version = "1.33.0", features = ["rt-multi-thread"]}
+axum = "0.7.4"
+axum-server = { version = "0.6.0", features = ["tls-rustls"]}
+async-trait = "0.1.77"
+bson = { version = "2.8.1", features = ["chrono-0_4"] }
+tokio = { version = "1.35.1", features = ["rt-multi-thread"]}
 chrono = "0.4.31"
-serde = { version = "1.0.190", features = ["derive"] }
-serde_repr = "0.1.17"
-reqwest = {version = "0.11.22", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
-futures = {version = "0.3.29"}
+serde = { version = "1.0.195", features = ["derive"] }
+serde_repr = "0.1.18"
+reqwest = {version = "0.11.23", default-features = false, features = ["gzip", "deflate", "stream", "json", "rustls-tls"]}
+futures = {version = "0.3.30"}
 rand = "0.8.5"
-base64 = "0.21.5"
+base64 = "0.21.7"
 mime = "0.3.17"
 tokio-util = "0.7.10"
 tokio-stream = "0.1.14"
 bytes = "1.5.0"
 tower = { version = "0.4.13", features = ["timeout"] }
-tower-http = { version = "0.4.4", features = ["trace"] }
+tower-http = { version = "0.5.1", features = ["trace"] }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.17", features = ["json"] }
+tracing-subscriber = { version = "0.3.18", features = ["json"] }

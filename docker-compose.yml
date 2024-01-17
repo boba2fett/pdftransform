@@ -1,14 +1,14 @@
 version: '3'
 services:
   nats:
-    image: nats:2.10.4-scratch
+    image: nats:2.10.9-scratch
     command: "-js -DV -sd /data"
     volumes:
       - ./data/nats/:/data
     ports:
       - 4222:4222
   minio:
-    image: quay.io/minio/minio:RELEASE.2023-11-01T18-37-25Z
+    image: quay.io/minio/minio:RELEASE.2024-01-16T16-07-38Z
     entrypoint: sh
     command: -c 'mkdir -p /data/bucket && minio server --console-address ":9001" /data'
     volumes:
